@@ -1,11 +1,8 @@
 ﻿using SharpAdbClient;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net;
 
-namespace TraceMate_Install
+namespace ADBManager
 {
     public class ADB
     {
@@ -43,10 +40,9 @@ namespace TraceMate_Install
         }
         public static void SendShellCommand(string command, DeviceData device)
         {
-            OutputReceiver outputReceiver = new OutputReceiver(); 
+            OutputReceiver outputReceiver = new OutputReceiver();
             AdbClient.Instance.ExecuteRemoteCommand(command, device, outputReceiver);
         }
-
     }
     class OutputReceiver : IShellOutputReceiver
     {

@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SharpAdbClient;
+﻿using SharpAdbClient;
 
-namespace TraceMate_Install
+namespace ADBManager
 {
     public class AndroidDevice
     {
@@ -34,6 +29,15 @@ namespace TraceMate_Install
             this.State = inputState;
             this.TransportID = inputTransportID;
         }
+        public AndroidDevice()
+        {
+            this.Model = string.Empty;
+            this.Name = string.Empty;
+            this.Product = string.Empty;
+            this.Serial = string.Empty;
+            this.State = DeviceState.Unknown;
+            this.TransportID = string.Empty;
+        }
 
         public DeviceData GetDevice()
         {
@@ -46,5 +50,6 @@ namespace TraceMate_Install
             device.TransportId = this.TransportID;
             return device;
         }
+
     }
 }
