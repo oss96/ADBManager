@@ -100,6 +100,7 @@
             this.buttonInstall.TabIndex = 6;
             this.buttonInstall.Text = "Install APK";
             this.buttonInstall.UseVisualStyleBackColor = true;
+            this.buttonInstall.Click += new System.EventHandler(this.ButtonInstall_Click);
             // 
             // comboBoxDevices
             // 
