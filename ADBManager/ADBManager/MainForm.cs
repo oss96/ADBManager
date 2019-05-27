@@ -17,15 +17,16 @@ namespace ADBManager
 {
     public partial class MainForm : Form
     {
-        ADB adb = new ADB();
         List<AndroidDevice> androidDevices = new List<AndroidDevice>();
-
+        Thread changeLastStatusThread;
+        readonly ADB adb;
+        delegate void RefreshCallback();
 
         public MainForm()
         {
             InitializeComponent();
-            ButtonRefresh_Click(null, null);
             StartDeviceMonitor();
+            adb = new ADB(this);
         }
 
 
@@ -37,79 +38,51 @@ namespace ADBManager
             monitor.DeviceDisconnected += this.OnDeviceDisconnected;
             monitor.Start();
         }
-        private void InstallAPK(string path, bool reinstall, DeviceData device)
+        internal void SetLastStatus(string status)
         {
-            PackageManager manager = new PackageManager(device);
-            Dictionary<string, string> packages = manager.Packages;
-            string packageName = GetPackageName(path);
-            var proc = new Process
+            if (changeLastStatusThread != null)
             {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "adb.exe",
-                    Arguments = $"-s {device.Serial} install {path}",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true
-                }
-            };
-            proc.Start();
-            Thread changeLastStatusThread = new Thread(unused => ChangeLastStatus("Installing apk..."));
+                changeLastStatusThread.Abort();
+                changeLastStatusThread = null;
+            }
+            changeLastStatusThread = new Thread(unused => ChangeLastStatus(status));
             changeLastStatusThread.Start();
-
         }
-
-        private string GetPackageName(string apkPath)
-        {
-            //.\aapt2.exe dump badging path
-            var proc = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "aapt2.exe",
-                    Arguments = $"dump badging {apkPath}",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true
-                }
-            };
-            proc.Start();
-
-
-            while (!proc.StandardOutput.EndOfStream)
-            {
-                string line = proc.StandardOutput.ReadLine();
-
-            }
-
-            return "";
-        }
-
-        private void InstallAPK(string path, bool reinstall, List<DeviceData> devices)
-        {
-            foreach (DeviceData item in devices)
-            {
-                PackageManager manager = new PackageManager(item);
-                Dictionary<string, string> packages = manager.Packages;
-                ProcessStartInfo processStartInfo = new ProcessStartInfo();
-                processStartInfo.FileName = "adb";
-                processStartInfo.Arguments = $"-s {item.Serial} install {path}";
-                processStartInfo.CreateNoWindow = true;
-                processStartInfo.UseShellExecute = false;
-                Process.Start(processStartInfo);
-            }
-        }
-        private void ChangeLastStatus(string lastStatus)
+        internal void ChangeLastStatus(string lastStatus)
         {
             toolStripStatusLabelDevice.Text = "Last Status: ";
             toolStripStatusLabelDevice.Text += lastStatus;
         }
+        internal void RefreshDevices()
+        {
+            if (this.InvokeRequired)
+            {
+                RefreshCallback callback = new RefreshCallback(RefreshDevices);
+                try
+                {
+                    this.Invoke(callback);
+                }
+                catch (Exception)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                ButtonRefresh_Click(null, null);
+            }
+
+        }
+
         #region Events
         private void MainForm_Load(object sender, EventArgs e)
         {
             this.comboBoxRebootOptions.SelectedIndex = 0;
-            if (comboBoxDevices.Items.Count > 0)
-                comboBoxDevices.SelectedIndex = 0;
+            this.buttonInstall.Enabled = false;
+            this.buttonReboot.Enabled = false;
+            this.buttonShellCommand.Enabled = false;
+            checkedListBoxDevices.CheckOnClick = true;
+            RefreshDevices();
         }
         internal void OnDeviceConnected(object sender, DeviceDataEventArgs e)
         {
@@ -123,6 +96,7 @@ namespace ADBManager
                 }
             }
             ChangeLastStatus($"The device {s} has connected to this PC");
+            RefreshDevices();
         }
         protected void OnDeviceDisconnected(object sender, DeviceDataEventArgs e)
         {
@@ -135,42 +109,45 @@ namespace ADBManager
                 }
             }
             ChangeLastStatus($"The device {s} has disconnected to this PC");
+            RefreshDevices();
         }
         private void ButtonRefresh_Click(object sender, EventArgs e)
         {
-            comboBoxDevices.Items.Clear();
+            checkedListBoxDevices.Items.Clear();
             androidDevices = ADB.GetConnectedDevice();
             foreach (AndroidDevice item in androidDevices)
             {
-                comboBoxDevices.Items.Add(item.Model);
+                checkedListBoxDevices.Items.Add(item.Model);
             }
-            comboBoxDevices.Sorted = true;
-            if (comboBoxDevices.Items.Count > 0)
-                comboBoxDevices.SelectedIndex = 0;
+            checkedListBoxDevices.Sorted = true;
         }
         private void ButtonReboot_Click(object sender, EventArgs e)
         {
-            DeviceData device = new DeviceData();
-            foreach (AndroidDevice item in androidDevices)
+            List<DeviceData> devices = new List<DeviceData>();
+
+            foreach (string checkItems in checkedListBoxDevices.CheckedItems)
             {
-                if (comboBoxDevices.Text == item.Model)
+                foreach (AndroidDevice device in androidDevices)
                 {
-                    device = item.GetDevice();
+                    if (checkItems == device.Model)
+                    {
+                        devices.Add(device.GetDevice());
+                    }
                 }
             }
             switch (comboBoxRebootOptions.SelectedIndex)
             {
                 case 0: //Reboot
-                    ADB.RebootDevice(device);//modes are: recovery, bootloader, fastboot
+                    ADB.RebootDevice(devices);
                     break;
                 case 1: //Recovery
-                    ADB.RebootDevice("recovery", device);//modes are: recovery, bootloader, fastboot
+                    ADB.RebootDevice("recovery", devices);
                     break;
                 case 2: // Bootloader
-                    ADB.RebootDevice("bootloader", device);//modes are: recovery, bootloader, fastboot
+                    ADB.RebootDevice("bootloader", devices);
                     break;
                 case 3: //fastboot
-                    ADB.RebootDevice("fastboot", device);//modes are: recovery, bootloader, fastboot
+                    ADB.RebootDevice("fastboot", devices);
                     break;
                 default:
                     MessageBox.Show("Unknown mode", "Unknown Input");
@@ -186,43 +163,61 @@ namespace ADBManager
         }
         private void ButtonInstall_Click(object sender, EventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Android Application Package | *.apk";
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Filter = "Android Application Package | *.apk"
+            };
             DialogResult apkFile = openFileDialog.ShowDialog();
             if (apkFile == DialogResult.OK)
             {
-                if (!checkBoxAllDevices.Checked)
+                DialogResult install = MessageBox.Show($"Are you sure you want to install {openFileDialog.FileName} on all selected devices?", "Attention!", MessageBoxButtons.YesNo);
+                if (install == DialogResult.Yes)
                 {
-                    DialogResult install = MessageBox.Show($"Are you sure you want to install {openFileDialog.SafeFileName} on {comboBoxDevices.Text}?", "Attention!", MessageBoxButtons.YesNo);
-                    if (install == DialogResult.Yes)
+                    List<DeviceData> devices = new List<DeviceData>();
+                    foreach (AndroidDevice item in androidDevices)
                     {
-                        foreach (AndroidDevice item in androidDevices)
-                        {
-                            if (comboBoxDevices.Text == item.Model)
-                            {
-                                //InstallAPK(openFileDialog.FileName, false, item.GetDevice());
-                                Thread installThread = new Thread(unused => InstallAPK(openFileDialog.FileName, false, item.GetDevice()));
-                                installThread.Start();
-                            }
-                        }
+                        devices.Add(item.GetDevice());
                     }
-                }
-                else
-                {
-                    DialogResult install = MessageBox.Show($"Are you sure you want to install {openFileDialog.SafeFileName} on all connected devices?", "Attention!", MessageBoxButtons.YesNo);
-                    if (install == DialogResult.Yes)
-                    {
-                        List<DeviceData> devices = new List<DeviceData>();
-                        foreach (AndroidDevice item in androidDevices)
-                        {
-                            devices.Add(item.GetDevice());
-                        }
-                        InstallAPK(openFileDialog.FileName, false, devices);
-                    }
-
+                    Thread installThread = new Thread(unused => adb.InstallAPK(openFileDialog.FileName, devices));
+                    installThread.Start();
                 }
             }
         }
+        private void ButtonAll_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < checkedListBoxDevices.Items.Count; i++)
+            {
+                checkedListBoxDevices.SetItemChecked(i, true);
+            }
+        }
+        private void ButtonNone_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < checkedListBoxDevices.Items.Count; i++)
+            {
+                checkedListBoxDevices.SetItemChecked(i, false);
+            }
+        }
+        private void CheckedListBoxDevices_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (checkedListBoxDevices.CheckedIndices.Count > 0)
+            {
+                this.buttonInstall.Enabled = true;
+                this.buttonReboot.Enabled = true;
+                this.buttonShellCommand.Enabled = true;
+            }
+            else
+            {
+                this.buttonInstall.Enabled = false;
+                this.buttonReboot.Enabled = false;
+                this.buttonShellCommand.Enabled = false;
+            }
+
+        }
+        private void ButtonUninstall_Click(object sender, EventArgs e)
+        {
+            // AdbClient.Instance.Install
+        }
         #endregion
+
     }
 }

@@ -34,18 +34,22 @@
             this.textBoxShellCommand = new System.Windows.Forms.TextBox();
             this.comboBoxRebootOptions = new System.Windows.Forms.ComboBox();
             this.buttonInstall = new System.Windows.Forms.Button();
-            this.comboBoxDevices = new System.Windows.Forms.ComboBox();
-            this.checkBoxAllDevices = new System.Windows.Forms.CheckBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabelDevice = new System.Windows.Forms.ToolStripStatusLabel();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.buttonNone = new System.Windows.Forms.Button();
+            this.buttonAll = new System.Windows.Forms.Button();
+            this.checkedListBoxDevices = new System.Windows.Forms.CheckedListBox();
+            this.buttonUninstall = new System.Windows.Forms.Button();
             this.statusStrip1.SuspendLayout();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // buttonRefresh
             // 
             this.buttonRefresh.Location = new System.Drawing.Point(12, 12);
             this.buttonRefresh.Name = "buttonRefresh";
-            this.buttonRefresh.Size = new System.Drawing.Size(117, 23);
+            this.buttonRefresh.Size = new System.Drawing.Size(167, 23);
             this.buttonRefresh.TabIndex = 0;
             this.buttonRefresh.Text = "Refresh";
             this.buttonRefresh.UseVisualStyleBackColor = true;
@@ -53,7 +57,7 @@
             // 
             // buttonReboot
             // 
-            this.buttonReboot.Location = new System.Drawing.Point(552, 38);
+            this.buttonReboot.Location = new System.Drawing.Point(266, 12);
             this.buttonReboot.Name = "buttonReboot";
             this.buttonReboot.Size = new System.Drawing.Size(101, 23);
             this.buttonReboot.TabIndex = 0;
@@ -63,7 +67,7 @@
             // 
             // buttonShellCommand
             // 
-            this.buttonShellCommand.Location = new System.Drawing.Point(659, 38);
+            this.buttonShellCommand.Location = new System.Drawing.Point(373, 12);
             this.buttonShellCommand.Name = "buttonShellCommand";
             this.buttonShellCommand.Size = new System.Drawing.Size(129, 23);
             this.buttonShellCommand.TabIndex = 2;
@@ -73,7 +77,7 @@
             // 
             // textBoxShellCommand
             // 
-            this.textBoxShellCommand.Location = new System.Drawing.Point(659, 12);
+            this.textBoxShellCommand.Location = new System.Drawing.Point(373, 40);
             this.textBoxShellCommand.Name = "textBoxShellCommand";
             this.textBoxShellCommand.Size = new System.Drawing.Size(129, 20);
             this.textBoxShellCommand.TabIndex = 4;
@@ -87,39 +91,20 @@
             "Recovery",
             "Bootloader",
             "Fastboot"});
-            this.comboBoxRebootOptions.Location = new System.Drawing.Point(552, 11);
+            this.comboBoxRebootOptions.Location = new System.Drawing.Point(266, 39);
             this.comboBoxRebootOptions.Name = "comboBoxRebootOptions";
             this.comboBoxRebootOptions.Size = new System.Drawing.Size(101, 21);
             this.comboBoxRebootOptions.TabIndex = 5;
             // 
             // buttonInstall
             // 
-            this.buttonInstall.Location = new System.Drawing.Point(135, 39);
+            this.buttonInstall.Location = new System.Drawing.Point(185, 12);
             this.buttonInstall.Name = "buttonInstall";
             this.buttonInstall.Size = new System.Drawing.Size(75, 23);
             this.buttonInstall.TabIndex = 6;
             this.buttonInstall.Text = "Install APK";
             this.buttonInstall.UseVisualStyleBackColor = true;
             this.buttonInstall.Click += new System.EventHandler(this.ButtonInstall_Click);
-            // 
-            // comboBoxDevices
-            // 
-            this.comboBoxDevices.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBoxDevices.FormattingEnabled = true;
-            this.comboBoxDevices.Location = new System.Drawing.Point(12, 41);
-            this.comboBoxDevices.Name = "comboBoxDevices";
-            this.comboBoxDevices.Size = new System.Drawing.Size(117, 21);
-            this.comboBoxDevices.TabIndex = 7;
-            // 
-            // checkBoxAllDevices
-            // 
-            this.checkBoxAllDevices.AutoSize = true;
-            this.checkBoxAllDevices.Location = new System.Drawing.Point(135, 18);
-            this.checkBoxAllDevices.Name = "checkBoxAllDevices";
-            this.checkBoxAllDevices.Size = new System.Drawing.Size(112, 17);
-            this.checkBoxAllDevices.TabIndex = 8;
-            this.checkBoxAllDevices.Text = "Select All Devices";
-            this.checkBoxAllDevices.UseVisualStyleBackColor = true;
             // 
             // statusStrip1
             // 
@@ -137,14 +122,67 @@
             this.toolStripStatusLabelDevice.Size = new System.Drawing.Size(108, 17);
             this.toolStripStatusLabelDevice.Text = "Last Event: nothing";
             // 
+            // panel1
+            // 
+            this.panel1.BackColor = System.Drawing.Color.White;
+            this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.panel1.Controls.Add(this.buttonNone);
+            this.panel1.Controls.Add(this.buttonAll);
+            this.panel1.Controls.Add(this.checkedListBoxDevices);
+            this.panel1.Location = new System.Drawing.Point(12, 41);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(167, 311);
+            this.panel1.TabIndex = 10;
+            // 
+            // buttonNone
+            // 
+            this.buttonNone.Location = new System.Drawing.Point(84, 3);
+            this.buttonNone.Name = "buttonNone";
+            this.buttonNone.Size = new System.Drawing.Size(75, 23);
+            this.buttonNone.TabIndex = 2;
+            this.buttonNone.Text = "Select None";
+            this.buttonNone.UseVisualStyleBackColor = true;
+            this.buttonNone.Click += new System.EventHandler(this.ButtonNone_Click);
+            // 
+            // buttonAll
+            // 
+            this.buttonAll.Location = new System.Drawing.Point(3, 3);
+            this.buttonAll.Name = "buttonAll";
+            this.buttonAll.Size = new System.Drawing.Size(75, 23);
+            this.buttonAll.TabIndex = 1;
+            this.buttonAll.Text = "Select All";
+            this.buttonAll.UseVisualStyleBackColor = true;
+            this.buttonAll.Click += new System.EventHandler(this.ButtonAll_Click);
+            // 
+            // checkedListBoxDevices
+            // 
+            this.checkedListBoxDevices.BackColor = System.Drawing.Color.White;
+            this.checkedListBoxDevices.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.checkedListBoxDevices.FormattingEnabled = true;
+            this.checkedListBoxDevices.Location = new System.Drawing.Point(3, 34);
+            this.checkedListBoxDevices.Name = "checkedListBoxDevices";
+            this.checkedListBoxDevices.Size = new System.Drawing.Size(157, 270);
+            this.checkedListBoxDevices.TabIndex = 0;
+            this.checkedListBoxDevices.SelectedIndexChanged += new System.EventHandler(this.CheckedListBoxDevices_SelectedIndexChanged);
+            // 
+            // buttonUninstall
+            // 
+            this.buttonUninstall.Location = new System.Drawing.Point(185, 41);
+            this.buttonUninstall.Name = "buttonUninstall";
+            this.buttonUninstall.Size = new System.Drawing.Size(75, 23);
+            this.buttonUninstall.TabIndex = 11;
+            this.buttonUninstall.Text = "Uninstall";
+            this.buttonUninstall.UseVisualStyleBackColor = true;
+            this.buttonUninstall.Click += new System.EventHandler(this.ButtonUninstall_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.buttonUninstall);
+            this.Controls.Add(this.panel1);
             this.Controls.Add(this.statusStrip1);
-            this.Controls.Add(this.checkBoxAllDevices);
-            this.Controls.Add(this.comboBoxDevices);
             this.Controls.Add(this.buttonInstall);
             this.Controls.Add(this.comboBoxRebootOptions);
             this.Controls.Add(this.textBoxShellCommand);
@@ -156,6 +194,7 @@
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -169,10 +208,13 @@
         private System.Windows.Forms.TextBox textBoxShellCommand;
         private System.Windows.Forms.ComboBox comboBoxRebootOptions;
         private System.Windows.Forms.Button buttonInstall;
-        private System.Windows.Forms.ComboBox comboBoxDevices;
-        private System.Windows.Forms.CheckBox checkBoxAllDevices;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelDevice;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.CheckedListBox checkedListBoxDevices;
+        private System.Windows.Forms.Button buttonNone;
+        private System.Windows.Forms.Button buttonAll;
+        private System.Windows.Forms.Button buttonUninstall;
     }
 }
 
