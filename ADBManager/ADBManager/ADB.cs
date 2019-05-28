@@ -1,10 +1,12 @@
 ﻿using SharpAdbClient;
 using SharpAdbClient.DeviceCommands;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Threading;
+using System.Linq;
 
 namespace ADBManager
 {
@@ -69,31 +71,41 @@ namespace ADBManager
             OutputReceiver outputReceiver = new OutputReceiver();
             AdbClient.Instance.ExecuteRemoteCommand(command, device, outputReceiver);
         }
-        internal void InstallAPK(string path, List<DeviceData> devices)
+        internal void InstallAPK(string path, List<DeviceData> devices, string appName)
         {
             string packageName = GetPackageName(path);
             foreach (DeviceData device in devices)
             {
-                mainForm.SetLastStatus($"Installing apk on {device.Model}");
-                /*Process proc = new Process
-                {
-                    StartInfo =
-                    {
-                        FileName = "files/adb.exe",
-                        Arguments = $"-s {device.Serial} install {path}",
-                        CreateNoWindow = false,
-                        UseShellExecute = false,
-                        ErrorDialog=true
-                    }
-                };
-                proc.Start();
-                proc.WaitForExit();*/
+                mainForm.SetLastStatus($"Installing {appName} on {device.Model}");
                 Stream apkfile = new MemoryStream(File.ReadAllBytes(path));
                 AdbClient.Instance.Install(device, apkfile);
-                mainForm.SetLastStatus($"finished installing {packageName} on {device.Model}");
+                mainForm.SetLastStatus($"finished installing {appName} on {device.Model}");
             }
         }
-        private string GetPackageName(string apkPath)
+        internal void UninstallAPP(string packageName, List<DeviceData> devices)
+        {
+            //SharpAdbClient.DeviceData
+            //devices[0].UninstallPackage();
+            PackageManager packageManager = new PackageManager(devices[0], true);
+            Dictionary<string, string> packages = packageManager.Packages;
+            AppList appList = new AppList(packages);
+            appList.ShowDialog();
+
+            Process proc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "files/aapt2.exe",
+                    //Arguments = $"dump badging {}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true
+                }
+            };
+            //get App Icon
+
+        }
+        internal string GetPackageName(string apkPath)
         {
             Process proc = new Process
             {
@@ -118,7 +130,33 @@ namespace ADBManager
             }
             return result;
         }
-
+        internal string GetAppName(string apkPath)
+        {
+            string appName = "";
+            Process proc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "files/aapt2.exe",
+                    Arguments = $"dump badging {apkPath}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true
+                }
+            };
+            proc.Start();
+            string output = "";
+            Thread readOutput = new Thread(() => { output = proc.StandardOutput.ReadToEnd(); });
+            readOutput.Start();
+            readOutput.Join();
+            if (output.Contains("application-label:"))
+            {
+                output = output.Substring(
+                    output.IndexOf("application-label:"), output.Length - output.IndexOf("application-label:")).Remove(0, 19);
+                appName = output.Substring(0, output.IndexOf("'\r\n"));
+            }
+            return appName;
+        }
     }
     class OutputReceiver : IShellOutputReceiver
     {

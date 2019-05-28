@@ -170,7 +170,8 @@ namespace ADBManager
             DialogResult apkFile = openFileDialog.ShowDialog();
             if (apkFile == DialogResult.OK)
             {
-                DialogResult install = MessageBox.Show($"Are you sure you want to install {openFileDialog.FileName} on all selected devices?", "Attention!", MessageBoxButtons.YesNo);
+                string appName = adb.GetAppName(openFileDialog.FileName);
+                DialogResult install = MessageBox.Show($"Are you sure you want to install \"{appName}\" on all selected devices?", "Attention!", MessageBoxButtons.YesNo);
                 if (install == DialogResult.Yes)
                 {
                     List<DeviceData> devices = new List<DeviceData>();
@@ -178,7 +179,7 @@ namespace ADBManager
                     {
                         devices.Add(item.GetDevice());
                     }
-                    Thread installThread = new Thread(unused => adb.InstallAPK(openFileDialog.FileName, devices));
+                    Thread installThread = new Thread(unused => adb.InstallAPK(openFileDialog.FileName, devices,appName));
                     installThread.Start();
                 }
             }
@@ -215,7 +216,13 @@ namespace ADBManager
         }
         private void ButtonUninstall_Click(object sender, EventArgs e)
         {
-            // AdbClient.Instance.Install
+            List<DeviceData> devices = new List<DeviceData>();
+            foreach (AndroidDevice item in androidDevices)
+            {
+                devices.Add(item.GetDevice());
+            }
+
+            adb.UninstallAPP("", devices);
         }
         #endregion
 
