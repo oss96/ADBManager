@@ -7,17 +7,21 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace ADBManager
 {
     public class ADB
     {
         private readonly MainForm mainForm;
+        private List<string> unInstallList = new List<string>();
+
 
         public ADB(MainForm mainForm)
         {
             this.mainForm = mainForm;
         }
+
 
         internal static List<AndroidDevice> GetConnectedDevice()
         {
@@ -73,37 +77,68 @@ namespace ADBManager
         }
         internal void InstallAPK(string path, List<DeviceData> devices, string appName)
         {
-            string packageName = GetPackageName(path);
-            foreach (DeviceData device in devices)
+            try
             {
-                mainForm.SetLastStatus($"Installing {appName} on {device.Model}");
-                Stream apkfile = new MemoryStream(File.ReadAllBytes(path));
-                AdbClient.Instance.Install(device, apkfile);
-                mainForm.SetLastStatus($"finished installing {appName} on {device.Model}");
+                StartServer();
+                string packageName = GetPackageName(path);
+                foreach (DeviceData device in devices)
+                {
+                    mainForm.SetLastStatus($"Installing {appName} on {device.Model}");
+                    //PackageManager packageManager = new PackageManager(device);
+                    //packageManager.InstallPackage(path, reinstall: true);
+
+
+                    Process process = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = @"files\adb.exe",
+                            Arguments = $"-s {device.Serial} install -r {path}",
+                            CreateNoWindow = false
+                        }
+                    };
+                    process.Start();
+
+
+                    mainForm.SetLastStatus($"finished installing {appName} on {device.Model}");
+                }
+            }
+            catch (PackageInstallationException pie)
+            {
+                MessageBox.Show(pie.Message, "Error while installing");
+                mainForm.SetLastStatus($"Error while installing {appName}");
             }
         }
-        internal void UninstallAPP(string packageName, List<DeviceData> devices)
+        internal void UninstallAPP(List<DeviceData> devices)
         {
-            //SharpAdbClient.DeviceData
-            //devices[0].UninstallPackage();
-            PackageManager packageManager = new PackageManager(devices[0], true);
-            Dictionary<string, string> packages = packageManager.Packages;
-            AppList appList = new AppList(packages);
-            appList.ShowDialog();
-
-            Process proc = new Process
+            List<PackageManager> packageManagers = new List<PackageManager>();
+            List<Dictionary<string, string>> packages = new List<Dictionary<string, string>>();
+            foreach (DeviceData device in devices)
             {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "files/aapt2.exe",
-                    //Arguments = $"dump badging {}",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true
-                }
-            };
-            //get App Icon
+                PackageManager tmp_packageManager = new PackageManager(device, true);
+                packageManagers.Add(tmp_packageManager);
+                packages.Add(new Dictionary<string, string>(tmp_packageManager.Packages));
+            }
+            using (AppList appList = new AppList(packages, this))
+            {
+                appList.ShowDialog();
+            }
+            foreach (var packageManager in packageManagers)
+            {
+                if (unInstallList.Count != 0)
+                    foreach (string item in unInstallList)
+                    {
+                        try
+                        {
+                            packageManager.UninstallPackage(item);
+                        }
+                        catch (Exception)
+                        {
 
+                            throw;
+                        }
+                    }
+            }
         }
         internal string GetPackageName(string apkPath)
         {
@@ -138,7 +173,7 @@ namespace ADBManager
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "files/aapt2.exe",
-                    Arguments = $"dump badging {apkPath}",
+                    Arguments = $"dump badging \"{ apkPath }\"",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardOutput = true
@@ -157,7 +192,19 @@ namespace ADBManager
             }
             return appName;
         }
+        internal void StartServer()
+        {
+            AdbServerStatus adb = new AdbServerStatus();
+            if (adb.IsRunning)
+            {
+                AdbClient.Instance.KillAdb();
+            }
+            AdbServer.Instance.StartServer(@"files\adb.exe", true);
+        }
+        internal void SetUninstallList(List<string> inputUninstallList) => unInstallList = inputUninstallList;
     }
+
+
     class OutputReceiver : IShellOutputReceiver
     {
         public bool ParsesErrors { get; set; }
