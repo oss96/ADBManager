@@ -17,6 +17,9 @@ namespace ADBManager
         private List<string> unInstallList = new List<string>();
 
 
+        public ADB()
+        {
+        }
         public ADB(MainForm mainForm)
         {
             this.mainForm = mainForm;
@@ -25,7 +28,6 @@ namespace ADBManager
 
         internal static List<AndroidDevice> GetConnectedDevice()
         {
-            //Get the first entry from the list of connected Android devices
             List<AndroidDevice> androidDevices = new List<AndroidDevice>();
             try
             {
@@ -84,17 +86,13 @@ namespace ADBManager
                 foreach (DeviceData device in devices)
                 {
                     mainForm.SetLastStatus($"Installing {appName} on {device.Model}");
-                    //PackageManager packageManager = new PackageManager(device);
-                    //packageManager.InstallPackage(path, reinstall: true);
-
-
                     Process process = new Process
                     {
                         StartInfo = new ProcessStartInfo
                         {
                             FileName = @"files\adb.exe",
                             Arguments = $"-s {device.Serial} install -r {path}",
-                            CreateNoWindow = false
+                            CreateNoWindow = true
                         }
                     };
                     process.Start();
@@ -192,6 +190,34 @@ namespace ADBManager
             }
             return appName;
         }
+        internal string GetAPKVersion(string apkPath)
+        {
+            string appName = "";
+            Process proc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "files/aapt2.exe",
+                    Arguments = $"dump badging \"{ apkPath }\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true
+                }
+            };
+            proc.Start();
+            string output = "";
+            Thread readOutput = new Thread(() => { output = proc.StandardOutput.ReadToEnd(); });
+            readOutput.Start();
+            readOutput.Join();
+            if (output.Contains("versionName="))
+            {
+                output = output.Substring(
+                    output.IndexOf("versionName="), output.Length - output.IndexOf("versionName=")).Remove(0, 12);
+                appName = output.Substring(0, output.IndexOf("platformBuildVersionName"));
+                appName = appName.Replace("'", "").Trim();
+            }
+            return appName;
+        }
         internal void StartServer()
         {
             AdbServerStatus adb = new AdbServerStatus();
@@ -202,6 +228,38 @@ namespace ADBManager
             AdbServer.Instance.StartServer(@"files\adb.exe", true);
         }
         internal void SetUninstallList(List<string> inputUninstallList) => unInstallList = inputUninstallList;
+        internal List<TreeNode> GetDeviceDirectory(string path, DeviceData device)
+        {
+            List<TreeNode> treeNodes = new List<TreeNode>();
+            Process proc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "files/adb.exe",
+                    Arguments = $" -s {device.Serial} shell ls",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true
+                }
+            };
+            if (path == "")
+            {
+                proc.Start();
+                proc.WaitForExit();
+                string s = "";
+                while (!proc.StandardOutput.EndOfStream)
+                {
+                    s += proc.StandardOutput.ReadLine();
+                }
+                s = s.Substring(s.LastIndexOf("Permission denied"), s.Length - s.LastIndexOf("Permission denied")).Remove(0, 17);
+                List<string> directories = s.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                foreach (string directory in directories)
+                {
+                    treeNodes.Add(new TreeNode(directory));
+                }
+            }
+            return treeNodes;
+        }
     }
 
 
