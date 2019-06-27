@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -163,7 +164,6 @@ namespace ADBManager
         }
         private void HandleThreadDone(object sender, EventArgs e)
         {
-            // You should get the idea this is just an example
             apkName = (sender as ThreadWorkerGetAppName).AppName;
             apkVersion = (sender as ThreadWorkerGetAppName).ApkVersion;
             ChangeAppName();
@@ -288,21 +288,51 @@ namespace ADBManager
 
         private void TreeViewDeviceTree_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            ADB adb = new ADB();
-            DeviceData device = new DeviceData();
-            foreach (DeviceData item in devices)
+            if (e.Node.Nodes.Count == 0)
             {
-                if (e.Node.Text.Contains(item.Serial))
+                ADB adb = new ADB();
+                DeviceData device = new DeviceData();
+                foreach (DeviceData item in devices)
                 {
-                    device = item;
+                    if (e.Node.Parent != null)
+                    {
+                        //get root node (device serial is missing)
+
+                        if (e.Node.Parent.Text.Contains(item.Serial))
+                            device = item;
+                    }
+                    else
+                    {
+                        if (e.Node.Text.Contains(item.Serial))
+                            device = item;
+                    }
+                }
+                List<TreeNode> treeNodes;
+                if (e.Node.Level == 0)
+                {
+                    treeNodes = adb.GetDeviceDirectory("", device);
+                }
+                else
+                {
+                    string path = e.Node.FullPath;
+                    path = path.Remove(0, path.IndexOf("\\") + 1);
+                    path = path.Replace("\\", "/");
+                    treeNodes = adb.GetDeviceDirectory(path, device);
+                }
+
+                foreach (TreeNode node in treeNodes)
+                {
+                    e.Node.Nodes.Add(node);
+                }
+                if (treeNodes.Count == 0)
+                {
+                    //Set Status not found
+                }
+                else
+                {
+                    e.Node.Expand();
                 }
             }
-            List<TreeNode> treeNodes = adb.GetDeviceDirectory("", device);
-            foreach (TreeNode node in treeNodes)
-            {
-                e.Node.Nodes.Add(node);
-            }
-            e.Node.Expand();
         }
     }
 

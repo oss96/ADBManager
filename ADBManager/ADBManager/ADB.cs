@@ -235,28 +235,29 @@ namespace ADBManager
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "files/adb.exe",
-                    Arguments = $" -s {device.Serial} shell ls",
+                    FileName = @"files/adb.exe",
+                    Arguments = $" -s {device.Serial} shell ls {path}",
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardOutput = true
                 }
             };
-            if (path == "")
+            proc.Start();
+            proc.WaitForExit();
+            List<string> directories = new List<string>();
+            while (!proc.StandardOutput.EndOfStream)
             {
-                proc.Start();
-                proc.WaitForExit();
-                string s = "";
-                while (!proc.StandardOutput.EndOfStream)
-                {
-                    s += proc.StandardOutput.ReadLine();
-                }
-                s = s.Substring(s.LastIndexOf("Permission denied"), s.Length - s.LastIndexOf("Permission denied")).Remove(0, 17);
-                List<string> directories = s.Split(new string[] { " " }, StringSplitOptions.RemoveEmptyEntries).ToList();
-                foreach (string directory in directories)
-                {
-                    treeNodes.Add(new TreeNode(directory));
-                }
+                directories.Add(proc.StandardOutput.ReadLine());
+            }
+            foreach (string directory in directories)
+            {
+                treeNodes.Add(new TreeNode(directory));
+            }
+            if (directories.Contains("adb: error: failed to get feature set: device 'shell' not found"))
+            {
+                AdbClient.Instance.KillAdb();
+                StartServer();
+                return GetDeviceDirectory(path,device);
             }
             return treeNodes;
         }
