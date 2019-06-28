@@ -1,15 +1,8 @@
 ﻿using SharpAdbClient;
-using SharpAdbClient.DeviceCommands;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ADBManager
@@ -17,16 +10,27 @@ namespace ADBManager
     public partial class Routines : Form
     {
         string selectedItem = string.Empty;
-        private delegate void ChangeAppNameCallback();
-        string apkName;
-        string apkVersion;
-        Commands commands = new Commands();
-        List<DeviceData> devices = AdbClient.Instance.GetDevices();
 
-        public Routines()
+        private delegate void ChangeAppNameCallback();
+
+        private string apkVersion;
+
+        private Commands commands = new Commands();
+
+        List<DeviceData> devices = AdbClient.Instance.GetDevices();
+        readonly MainForm mainForm;
+
+        public string ApkName { get; set; }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Routines"/> class.
+        /// </summary>
+        /// <param name="inputMainForm"></param>
+        public Routines(MainForm inputMainForm)
         {
             InitializeComponent();
-            this.MinimumSize = this.Size;
+            MinimumSize = Size;
+            mainForm = inputMainForm;
         }
 
         private void Routines_Load(object sender, EventArgs e)
@@ -43,16 +47,19 @@ namespace ADBManager
             string[] commands = new string[] { "Install", "Uninstall", "Shell", "Restart", "Pull", "Push" };
             for (int i = 0; i < imageList.Images.Count; i++)
             {
-                ListViewItem lvi = new ListViewItem();
-                lvi.ImageIndex = i;
-                lvi.Text = commands[i];
+                ListViewItem lvi = new ListViewItem
+                {
+                    ImageIndex = i,
+                    Text = commands[i]
+                };
                 listViewCommands.Items.Add(lvi);
             }
             pictureBoxCommand.Size = new Size(64, 64);
-            buttonOpenFile.Left = (this.panelInstall.Width - buttonOpenFile.Width) / 2;
-            labelApkName.Left = (this.panelInstall.Width - labelApkName.Width) / 2;
-            pictureBoxCommand.Left = (this.Width - pictureBoxCommand.Width) / 2;
-            labelCommand.Left = (this.Width - labelCommand.Width) / 2;
+            buttonOpenFile.Left = (panelInstall.Width - buttonOpenFile.Width) / 2;
+            labelApkName.Left = (panelInstall.Width - labelApkName.Width) / 2;
+            pictureBoxCommand.Left = (Width - pictureBoxCommand.Width) / 2;
+            labelCommand.Left = (Width - labelCommand.Width) / 2;
+            comboBoxRebootOptions.Left = (panelRestart.Width - comboBoxRebootOptions.Width) / 2;
         }
         private void ButtonAdd_Click(object sender, EventArgs e)
         {
@@ -71,6 +78,21 @@ namespace ADBManager
                     richTextBoxShell.Focus();
                     break;
                 case Commands.Restart:
+                    switch (comboBoxRebootOptions.SelectedIndex)
+                    {
+                        case 0: //Reboot
+                            break;
+                        case 1: //Recovery
+                            break;
+                        case 2: // Bootloader
+                            break;
+                        case 3: //fastboot
+                            break;
+                        default:
+                            MessageBox.Show("Unknown mode", "Unknown Input");
+                            break;
+                    }
+
                     break;
                 case Commands.Pull:
                     break;
@@ -92,7 +114,7 @@ namespace ADBManager
                     pictureBoxCommand.Image = Properties.Resources.Install;
                     labelCommand.Text = selectedItem;
                     labelCommand.Show();
-                    labelCommand.Left = (this.Width - labelCommand.Width) / 2;
+                    labelCommand.Left = (Width - labelCommand.Width) / 2;
                     ShowPanel(commands);
                     break;
                 case "Uninstall":
@@ -100,7 +122,7 @@ namespace ADBManager
                     pictureBoxCommand.Image = Properties.Resources.Uninstall;
                     labelCommand.Text = selectedItem;
                     labelCommand.Show();
-                    labelCommand.Left = (this.Width - labelCommand.Width) / 2;
+                    labelCommand.Left = (Width - labelCommand.Width) / 2;
                     ShowPanel(commands);
                     break;
                 case "Shell":
@@ -108,7 +130,7 @@ namespace ADBManager
                     pictureBoxCommand.Image = Properties.Resources.Shell;
                     labelCommand.Text = selectedItem;
                     labelCommand.Show();
-                    labelCommand.Left = (this.Width - labelCommand.Width) / 2;
+                    labelCommand.Left = (Width - labelCommand.Width) / 2;
                     ShowPanel(commands);
                     break;
                 case "Restart":
@@ -116,19 +138,22 @@ namespace ADBManager
                     pictureBoxCommand.Image = Properties.Resources.Restart;
                     labelCommand.Text = selectedItem;
                     labelCommand.Show();
-                    labelCommand.Left = (this.Width - labelCommand.Width) / 2;
+                    labelCommand.Left = (Width - labelCommand.Width) / 2;
                     ShowPanel(commands);
+                    comboBoxRebootOptions.SelectedIndex = 0;
                     break;
                 case "Pull":
                     commands = Commands.Pull;
                     pictureBoxCommand.Image = Properties.Resources.Left;
                     labelCommand.Text = selectedItem;
                     labelCommand.Show();
-                    labelCommand.Left = (this.Width - labelCommand.Width) / 2;
+                    labelCommand.Left = (Width - labelCommand.Width) / 2;
                     ShowPanel(commands);
                     foreach (DeviceData device in devices)
                     {
-                        treeViewDeviceTree.Nodes.Add($"{device.Model} {device.Serial}");
+
+                            treeViewDeviceTree.Nodes.Add($"{device.Model} {device.Serial}");
+
                     }
                     break;
                 case "Push":
@@ -136,17 +161,21 @@ namespace ADBManager
                     pictureBoxCommand.Image = Properties.Resources.Right;
                     labelCommand.Text = selectedItem;
                     labelCommand.Show();
-                    labelCommand.Left = (this.Width - labelCommand.Width) / 2;
+                    labelCommand.Left = (Width - labelCommand.Width) / 2;
                     ShowPanel(commands);
                     break;
                 default:
                     break;
             }
+            buttonAdd.Enabled = false;
+            buttonCancel.Enabled = false;
         }
         private void ButtonOpenFile_Click(object sender, EventArgs e)
         {
-            openFileDialogApk = new OpenFileDialog();
-            openFileDialogApk.Filter = "Android Application Package | *.apk";
+            openFileDialogApk = new OpenFileDialog
+            {
+                Filter = "Android Application Package | *.apk"
+            };
             DialogResult r = openFileDialogApk.ShowDialog();
 
             if (r == DialogResult.OK)
@@ -158,24 +187,24 @@ namespace ADBManager
                 Thread threadGetAppName = new Thread(worker.Run);
                 threadGetAppName.Start();
                 labelApkName.Text = "Loading Name...";
-                labelApkName.Left = (this.panelInstall.Width - labelApkName.Width) / 2;
+                labelApkName.Left = (panelInstall.Width - labelApkName.Width) / 2;
                 labelApkName.Show();
             }
         }
         private void HandleThreadDone(object sender, EventArgs e)
         {
-            apkName = (sender as ThreadWorkerGetAppName).AppName;
+            ApkName = (sender as ThreadWorkerGetAppName).AppName;
             apkVersion = (sender as ThreadWorkerGetAppName).ApkVersion;
             ChangeAppName();
         }
         private void ChangeAppName()
         {
-            if (this.InvokeRequired)
+            if (InvokeRequired)
             {
                 ChangeAppNameCallback callback = new ChangeAppNameCallback(ChangeAppName);
                 try
                 {
-                    this.Invoke(callback);
+                    Invoke(callback);
                 }
                 catch (Exception)
                 {
@@ -184,8 +213,8 @@ namespace ADBManager
             }
             else
             {
-                labelApkName.Text = $"{apkName}: {apkVersion}";
-                labelApkName.Left = (this.panelInstall.Width - labelApkName.Width) / 2;
+                labelApkName.Text = $"{ApkName}: {apkVersion}";
+                labelApkName.Left = (panelInstall.Width - labelApkName.Width) / 2;
             }
         }
         private void ButtonCancel_Click(object sender, EventArgs e)
@@ -285,7 +314,6 @@ namespace ADBManager
                     break;
             }
         }
-
         private void TreeViewDeviceTree_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
         {
             if (e.Node.Nodes.Count == 0)
@@ -296,9 +324,9 @@ namespace ADBManager
                 {
                     if (e.Node.Parent != null)
                     {
-                        //get root node (device serial is missing)
-
-                        if (e.Node.Parent.Text.Contains(item.Serial))
+                        string rootNode = e.Node.FullPath;
+                        rootNode = rootNode.Remove(rootNode.IndexOf("\\"), rootNode.Length - rootNode.IndexOf("\\"));
+                        if (rootNode.Contains(item.Serial))
                             device = item;
                     }
                     else
@@ -318,6 +346,7 @@ namespace ADBManager
                     path = path.Remove(0, path.IndexOf("\\") + 1);
                     path = path.Replace("\\", "/");
                     treeNodes = adb.GetDeviceDirectory(path, device);
+                    e.Node.BackColor = Color.White;
                 }
 
                 foreach (TreeNode node in treeNodes)
@@ -326,31 +355,30 @@ namespace ADBManager
                 }
                 if (treeNodes.Count == 0)
                 {
+                    e.Node.BackColor = Color.Red;
                     //Set Status not found
                 }
                 else
                 {
                     e.Node.Expand();
                 }
+                buttonAdd.Enabled = true;
+                buttonCancel.Enabled = true;
             }
         }
     }
-
     class ThreadWorkerGetAppName
     {
         public event EventHandler ThreadDone;
-        string appName;
         ADB adb = new ADB();
-        private string fileName;
-        private string apkVersion;
 
-        public string FileName { get => fileName; set => fileName = value; }
-        public string AppName { get => appName; set => appName = value; }
-        public string ApkVersion { get => apkVersion; set => apkVersion = value; }
+        public string FileName { get; set; }
+        public string AppName { get; set; }
+        public string ApkVersion { get; set; }
 
         public ThreadWorkerGetAppName(string fileName)
         {
-            this.FileName = fileName;
+            FileName = fileName;
         }
 
         public void Run()

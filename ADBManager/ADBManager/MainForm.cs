@@ -1,21 +1,12 @@
-﻿using SharpAdbClient;
-using SharpAdbClient.DeviceCommands;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
-using System.Reflection;
-using System.Security;
-using System.Security.Permissions;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-namespace ADBManager
+﻿namespace ADBManager
 {
+    using SharpAdbClient;
+    using System;
+    using System.Collections.Generic;
+    using System.Net;
+    using System.Threading;
+    using System.Windows.Forms;
+
     public partial class MainForm : Form
     {
         private List<AndroidDevice> adbAndroidDevices = new List<AndroidDevice>();
@@ -24,20 +15,27 @@ namespace ADBManager
         private readonly ADB adb;
         private List<string> fastbootDevices = new List<string>();
         private List<string> fastbootWorkDevices = new List<string>();
+
         private delegate void RefreshCallback();
+
         private delegate void AddDataGridRowCallback_Fastboot();
+
         private delegate void RemoveDataGridRowCallback_Fastboot();
-        private string newDevice;
+
         private Fastboot fastboot = new Fastboot();
 
+        public string NewDevice { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainForm"/> class.
+        /// </summary>
         public MainForm()
         {
             InitializeComponent();
-            this.MinimumSize = this.Size;
-            this.MaximumSize = this.Size;
+            MinimumSize = Size;
+            MaximumSize = Size;
             adb = new ADB(this);
-            this.StartDeviceMonitor();
+            StartDeviceMonitor();
         }
 
 
@@ -47,11 +45,11 @@ namespace ADBManager
             {
                 adb.StartServer();
                 DeviceMonitor monitor = new DeviceMonitor(new AdbSocket(new IPEndPoint(IPAddress.Loopback, AdbClient.AdbServerPort)));
-                monitor.DeviceConnected += this.OnDeviceConnected;
-                monitor.DeviceDisconnected += this.OnDeviceDisconnected;
+                monitor.DeviceConnected += OnDeviceConnected;
+                monitor.DeviceDisconnected += OnDeviceDisconnected;
                 monitor.Start();
-                fastboot.FastbootDeviceConnected += this.FastbootDevice_Connected;
-                fastboot.FastbootDeviceDisconnected += this.FastbootDevice_Disconnected;
+                fastboot.FastbootDeviceConnected += FastbootDevice_Connected;
+                fastboot.FastbootDeviceDisconnected += FastbootDevice_Disconnected;
                 fastboot.StartWatch();
             }
             catch (System.Net.Sockets.SocketException se)
@@ -59,6 +57,7 @@ namespace ADBManager
                 MessageBox.Show(se.Message);
             }
         }
+
         internal void SetLastStatus(string status)
         {
             if (changeLastStatusThread != null)
@@ -76,12 +75,12 @@ namespace ADBManager
         }
         internal void RefreshDevices()
         {
-            if (this.InvokeRequired)
+            if (InvokeRequired)
             {
                 RefreshCallback callback = new RefreshCallback(RefreshDevices);
                 try
                 {
-                    this.Invoke(callback);
+                    Invoke(callback);
                 }
                 catch (Exception)
                 {
@@ -100,7 +99,7 @@ namespace ADBManager
                 AddDataGridRowCallback_Fastboot callback = new AddDataGridRowCallback_Fastboot(AddDataGridRow_Fastboot);
                 try
                 {
-                    this.Invoke(callback);
+                    Invoke(callback);
                 }
                 catch (Exception)
                 {
@@ -109,7 +108,7 @@ namespace ADBManager
             }
             else
             {
-                AddRowFastboot(newDevice);
+                AddRowFastboot(NewDevice);
             }
         }
         internal void RemoveDataGridRow_Fastboot()
@@ -119,7 +118,7 @@ namespace ADBManager
                 RemoveDataGridRowCallback_Fastboot callback = new RemoveDataGridRowCallback_Fastboot(RemoveDataGridRow_Fastboot);
                 try
                 {
-                    this.Invoke(callback);
+                    Invoke(callback);
                 }
                 catch (Exception)
                 {
@@ -128,7 +127,7 @@ namespace ADBManager
             }
             else
             {
-                RemoveRowFastboot(newDevice);
+                RemoveRowFastboot(NewDevice);
             }
         }
         internal void RemoveRowFastboot(string device)
@@ -180,6 +179,7 @@ namespace ADBManager
             buttonFastbootNone.Enabled = false;
             RefreshDevices();
         }
+
         internal void OnDeviceConnected(object sender, DeviceDataEventArgs e)
         {
             adbAndroidDevices = ADB.GetConnectedDevice();
@@ -194,6 +194,7 @@ namespace ADBManager
             ChangeLastStatus($"The device {s} has connected to this PC via ADB");
             RefreshDevices();
         }
+
         internal void OnDeviceDisconnected(object sender, DeviceDataEventArgs e)
         {
             string s = "";
@@ -207,18 +208,21 @@ namespace ADBManager
             ChangeLastStatus($"The device {s} has disconnected from this PC via ADB");
             RefreshDevices();
         }
+
         private void FastbootDevice_Connected(object source, FastbootDeviceEventArgs args)
         {
-            this.newDevice = args.Device;
+            NewDevice = args.Device;
             AddDataGridRow_Fastboot();
             ChangeLastStatus($"The device {args.Device} has connected to this PC via Fastboot");
         }
+
         private void FastbootDevice_Disconnected(object source, FastbootDeviceEventArgs args)
         {
-            this.newDevice = args.Device;
+            NewDevice = args.Device;
             RemoveDataGridRow_Fastboot();
             ChangeLastStatus($"The device {args.Device} has disconnected to this PC via Fastboot");
         }
+
         private void ButtonRefresh_Click(object sender, EventArgs e)
         {
             dataGridViewADB.Rows.Clear();
@@ -235,11 +239,13 @@ namespace ADBManager
             }
             dataGridViewADB.ClearSelection();
             dataGridViewFastboot.ClearSelection();
-            this.buttonInstall.Enabled = false;
-            this.buttonUninstall.Enabled = false;
-            this.buttonReboot.Enabled = false;
-            this.buttonShellCommand.Enabled = false;
+            buttonInstall.Enabled = false;
+            buttonUninstall.Enabled = false;
+            buttonReboot.Enabled = false;
+            buttonShellCommand.Enabled = false;
         }
+
+
         private void ButtonReboot_Click(object sender, EventArgs e)
         {
             if (adbWorkDevices.Count != 0)
@@ -259,14 +265,16 @@ namespace ADBManager
                     fastboot.RebootDevices();
             }
         }
+
         private void ButtonShellCommand_Click(object sender, EventArgs e)
         {
             foreach (AndroidDevice device in adbWorkDevices)
             {
-                ADB.SendShellCommand(this.richTextBoxShell.Text, device.GetDevice());
+                ADB.SendShellCommand(richTextBoxShell.Text, device.GetDevice());
             }
-            this.richTextBoxShell.Clear();
+            richTextBoxShell.Clear();
         }
+
         private void ButtonInstall_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog
@@ -292,6 +300,7 @@ namespace ADBManager
                 }
             }
         }
+
         private void ButtonADBAll_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < dataGridViewADB.Rows.Count; i++)
@@ -299,24 +308,26 @@ namespace ADBManager
                 dataGridViewADB.Rows[i].Cells[0].Value = true;
             }
             buttonFastbootNone.PerformClick();
-            this.buttonInstall.Enabled = true;
-            this.buttonUninstall.Enabled = true;
-            this.buttonReboot.Enabled = true;
-            this.buttonShellCommand.Enabled = true;
+            buttonInstall.Enabled = true;
+            buttonUninstall.Enabled = true;
+            buttonReboot.Enabled = true;
+            buttonShellCommand.Enabled = true;
         }
+
         private void ButtonADBNone_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < dataGridViewADB.Rows.Count; i++)
             {
                 dataGridViewADB.Rows[i].Cells[0].Value = false;
             }
-            this.buttonInstall.Enabled = false;
-            this.buttonUninstall.Enabled = false;
-            this.buttonReboot.Enabled = false;
-            this.buttonShellCommand.Enabled = false;
+            buttonInstall.Enabled = false;
+            buttonUninstall.Enabled = false;
+            buttonReboot.Enabled = false;
+            buttonShellCommand.Enabled = false;
             buttonFastbootNone.Enabled = false;
             buttonADBNone.Enabled = false;
         }
+
         private void ButtonFastbootAll_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < dataGridViewFastboot.Rows.Count; i++)
@@ -324,24 +335,26 @@ namespace ADBManager
                 dataGridViewFastboot.Rows[i].Cells[0].Value = true;
             }
             buttonADBNone.PerformClick();
-            this.buttonInstall.Enabled = true;
-            this.buttonUninstall.Enabled = true;
-            this.buttonReboot.Enabled = true;
-            this.buttonShellCommand.Enabled = true;
+            buttonInstall.Enabled = true;
+            buttonUninstall.Enabled = true;
+            buttonReboot.Enabled = true;
+            buttonShellCommand.Enabled = true;
         }
+
         private void ButtonFastbootNone_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < dataGridViewFastboot.Rows.Count; i++)
             {
                 dataGridViewFastboot.Rows[i].Cells[0].Value = false;
             }
-            this.buttonInstall.Enabled = false;
-            this.buttonUninstall.Enabled = false;
-            this.buttonReboot.Enabled = false;
-            this.buttonShellCommand.Enabled = false;
+            buttonInstall.Enabled = false;
+            buttonUninstall.Enabled = false;
+            buttonReboot.Enabled = false;
+            buttonShellCommand.Enabled = false;
             buttonFastbootNone.Enabled = false;
             buttonADBNone.Enabled = false;
         }
+
         private void ButtonUninstall_Click(object sender, EventArgs e)
         {
             List<DeviceData> devices = new List<DeviceData>();
@@ -351,6 +364,7 @@ namespace ADBManager
             }
             adb.UninstallAPP(devices);
         }
+
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             AdbServerStatus adb = new AdbServerStatus();
@@ -360,6 +374,7 @@ namespace ADBManager
             }
             fastboot.Dispose();
         }
+
         private void DataGridViewADB_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
@@ -409,6 +424,7 @@ namespace ADBManager
                 }
             }
         }
+
         private void DataGridViewADB_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
             adbWorkDevices.Clear();
@@ -448,11 +464,12 @@ namespace ADBManager
                 }
             }
         }
+
         #endregion
 
         private void ButtonAddRoutine_Click(object sender, EventArgs e)
         {
-            Routines routines = new Routines();
+            Routines routines = new Routines(this);
             routines.ShowDialog();
         }
 
@@ -460,5 +477,6 @@ namespace ADBManager
         {
 
         }
+
     }
 }

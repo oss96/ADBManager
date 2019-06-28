@@ -42,6 +42,7 @@
             this.panelShell = new System.Windows.Forms.Panel();
             this.richTextBoxShell = new System.Windows.Forms.RichTextBox();
             this.panelRestart = new System.Windows.Forms.Panel();
+            this.comboBoxRebootOptions = new System.Windows.Forms.ComboBox();
             this.panelPull = new System.Windows.Forms.Panel();
             this.treeViewDeviceTree = new System.Windows.Forms.TreeView();
             this.panelPush = new System.Windows.Forms.Panel();
@@ -49,6 +50,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxCommand)).BeginInit();
             this.panelInstall.SuspendLayout();
             this.panelShell.SuspendLayout();
+            this.panelRestart.SuspendLayout();
             this.panelPull.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -66,6 +68,7 @@
             this.listViewCommands.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.listViewCommands.HideSelection = false;
             this.listViewCommands.Location = new System.Drawing.Point(585, 12);
+            this.listViewCommands.MultiSelect = false;
             this.listViewCommands.Name = "listViewCommands";
             this.listViewCommands.Size = new System.Drawing.Size(203, 426);
             this.listViewCommands.TabIndex = 1;
@@ -85,7 +88,7 @@
             // 
             // buttonRemove
             // 
-            this.buttonRemove.Location = new System.Drawing.Point(221, 12);
+            this.buttonRemove.Location = new System.Drawing.Point(221, 415);
             this.buttonRemove.Name = "buttonRemove";
             this.buttonRemove.Size = new System.Drawing.Size(92, 23);
             this.buttonRemove.TabIndex = 3;
@@ -188,11 +191,26 @@
             // panelRestart
             // 
             this.panelRestart.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panelRestart.Location = new System.Drawing.Point(221, 284);
+            this.panelRestart.Controls.Add(this.comboBoxRebootOptions);
+            this.panelRestart.Location = new System.Drawing.Point(221, 98);
             this.panelRestart.Name = "panelRestart";
-            this.panelRestart.Size = new System.Drawing.Size(358, 28);
+            this.panelRestart.Size = new System.Drawing.Size(358, 282);
             this.panelRestart.TabIndex = 7;
             this.panelRestart.Visible = false;
+            // 
+            // comboBoxRebootOptions
+            // 
+            this.comboBoxRebootOptions.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxRebootOptions.FormattingEnabled = true;
+            this.comboBoxRebootOptions.Items.AddRange(new object[] {
+            "Reboot",
+            "Recovery",
+            "Bootloader",
+            "Fastboot"});
+            this.comboBoxRebootOptions.Location = new System.Drawing.Point(125, 3);
+            this.comboBoxRebootOptions.Name = "comboBoxRebootOptions";
+            this.comboBoxRebootOptions.Size = new System.Drawing.Size(101, 21);
+            this.comboBoxRebootOptions.TabIndex = 12;
             // 
             // panelPull
             // 
@@ -200,7 +218,7 @@
             this.panelPull.Controls.Add(this.treeViewDeviceTree);
             this.panelPull.Location = new System.Drawing.Point(221, 98);
             this.panelPull.Name = "panelPull";
-            this.panelPull.Size = new System.Drawing.Size(358, 214);
+            this.panelPull.Size = new System.Drawing.Size(358, 282);
             this.panelPull.TabIndex = 7;
             this.panelPull.Visible = false;
             // 
@@ -209,9 +227,10 @@
             this.treeViewDeviceTree.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.treeViewDeviceTree.LineColor = System.Drawing.Color.Gainsboro;
             this.treeViewDeviceTree.Location = new System.Drawing.Point(10, 12);
             this.treeViewDeviceTree.Name = "treeViewDeviceTree";
-            this.treeViewDeviceTree.Size = new System.Drawing.Size(336, 188);
+            this.treeViewDeviceTree.Size = new System.Drawing.Size(336, 256);
             this.treeViewDeviceTree.TabIndex = 0;
             this.treeViewDeviceTree.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.TreeViewDeviceTree_NodeMouseClick);
             // 
@@ -239,10 +258,9 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.panelPull);
+            this.Controls.Add(this.panelRestart);
             this.Controls.Add(this.labelCommand);
             this.Controls.Add(this.panelPush);
-            this.Controls.Add(this.panelRestart);
             this.Controls.Add(this.panelShell);
             this.Controls.Add(this.panelUninstall);
             this.Controls.Add(this.buttonCancel);
@@ -252,6 +270,7 @@
             this.Controls.Add(this.buttonAdd);
             this.Controls.Add(this.listViewCommands);
             this.Controls.Add(this.listViewRoutine);
+            this.Controls.Add(this.panelPull);
             this.Name = "Routines";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -261,6 +280,7 @@
             this.panelInstall.ResumeLayout(false);
             this.panelInstall.PerformLayout();
             this.panelShell.ResumeLayout(false);
+            this.panelRestart.ResumeLayout(false);
             this.panelPull.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -287,5 +307,6 @@
         private System.Windows.Forms.RichTextBox richTextBoxShell;
         private System.Windows.Forms.Label labelCommand;
         private System.Windows.Forms.TreeView treeViewDeviceTree;
+        private System.Windows.Forms.ComboBox comboBoxRebootOptions;
     }
 }

@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ADBManager
 {
 
     class Fastboot
     {
-        private readonly Process proc = new Process
+        public Process Proc { get; } = new Process
         {
             StartInfo = new ProcessStartInfo
             {
@@ -23,7 +20,6 @@ namespace ADBManager
                 UseShellExecute = false
             }
         };
-        public Process Proc => proc;
         private List<string> devices = new List<string>();
         private readonly List<string> oldDevices = new List<string>();
         private bool runWatch;

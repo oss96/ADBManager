@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Input;
 
@@ -25,18 +21,18 @@ namespace ADBManager
             {
                 listPackages.Add(item.Keys.ToList());
             }
-            this.adb = inputADB;
+            adb = inputADB;
         }
         public AppList(Dictionary<string, string> inputPackage, ADB inputADB)
         {
             InitializeComponent();
             packages = inputPackage.Keys.ToList();
-            this.adb = inputADB;
+            adb = inputADB;
         }
 
         private void AppList_Load(object sender, EventArgs e)
         {
-            this.MinimumSize = this.Size;
+            MinimumSize = Size;
             GetCommonPackages();
             checkedListBoxAppList.Items.AddRange(packages.ToArray());
         }
@@ -102,7 +98,7 @@ namespace ADBManager
         }
         private void ButtonCancel_Click(object sender, EventArgs e)
         {
-            this.Close();
+            Close();
         }
         private void ButtonSave_Click(object sender, EventArgs e)
         {

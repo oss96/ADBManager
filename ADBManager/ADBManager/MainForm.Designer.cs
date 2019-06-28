@@ -29,8 +29,8 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.buttonRefresh = new System.Windows.Forms.Button();
             this.buttonReboot = new System.Windows.Forms.Button();
             this.buttonShellCommand = new System.Windows.Forms.Button();
@@ -45,9 +45,6 @@
             this.dataGridViewCheckBoxColumnFastboot = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.dataGridViewTextBoxColumnFastbootSerial = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.dataGridViewADB = new System.Windows.Forms.DataGridView();
-            this.ColumnFastbootCheck = new System.Windows.Forms.DataGridViewCheckBoxColumn();
-            this.ColumnName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ColumnSerial = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.buttonADBNone = new System.Windows.Forms.Button();
             this.buttonADBAll = new System.Windows.Forms.Button();
             this.buttonUninstall = new System.Windows.Forms.Button();
@@ -55,6 +52,9 @@
             this.buttonAddRoutine = new System.Windows.Forms.Button();
             this.richTextBoxShell = new System.Windows.Forms.RichTextBox();
             this.buttonPush = new System.Windows.Forms.Button();
+            this.ColumnCheck = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.ColumnName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ColumnSerial = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.statusStrip1.SuspendLayout();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewFastboot)).BeginInit();
@@ -178,15 +178,15 @@
             this.dataGridViewFastboot.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.dataGridViewCheckBoxColumnFastboot,
             this.dataGridViewTextBoxColumnFastbootSerial});
-            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle5.BackColor = System.Drawing.SystemColors.Window;
-            dataGridViewCellStyle5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(254)));
-            dataGridViewCellStyle5.ForeColor = System.Drawing.SystemColors.ControlText;
-            dataGridViewCellStyle5.NullValue = "False";
-            dataGridViewCellStyle5.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle5.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewFastboot.DefaultCellStyle = dataGridViewCellStyle5;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Window;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(254)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle1.NullValue = "False";
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewFastboot.DefaultCellStyle = dataGridViewCellStyle1;
             this.dataGridViewFastboot.Location = new System.Drawing.Point(320, 34);
             this.dataGridViewFastboot.Name = "dataGridViewFastboot";
             this.dataGridViewFastboot.ReadOnly = true;
@@ -223,18 +223,18 @@
             this.dataGridViewADB.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridViewADB.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridViewADB.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.ColumnFastbootCheck,
+            this.ColumnCheck,
             this.ColumnName,
             this.ColumnSerial});
-            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle6.BackColor = System.Drawing.SystemColors.Window;
-            dataGridViewCellStyle6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(254)));
-            dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.ControlText;
-            dataGridViewCellStyle6.NullValue = false;
-            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewADB.DefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Window;
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(254)));
+            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle2.NullValue = false;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewADB.DefaultCellStyle = dataGridViewCellStyle2;
             this.dataGridViewADB.Location = new System.Drawing.Point(3, 34);
             this.dataGridViewADB.Name = "dataGridViewADB";
             this.dataGridViewADB.ReadOnly = true;
@@ -245,30 +245,6 @@
             this.dataGridViewADB.TabIndex = 0;
             this.dataGridViewADB.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.DataGridViewADB_CellClick);
             this.dataGridViewADB.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.DataGridViewADB_CellValueChanged);
-            // 
-            // ColumnFastbootCheck
-            // 
-            this.ColumnFastbootCheck.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.ColumnFastbootCheck.HeaderText = "";
-            this.ColumnFastbootCheck.Name = "ColumnFastbootCheck";
-            this.ColumnFastbootCheck.ReadOnly = true;
-            this.ColumnFastbootCheck.Width = 20;
-            // 
-            // ColumnName
-            // 
-            this.ColumnName.HeaderText = "Name";
-            this.ColumnName.Name = "ColumnName";
-            this.ColumnName.ReadOnly = true;
-            this.ColumnName.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.ColumnName.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            // 
-            // ColumnSerial
-            // 
-            this.ColumnSerial.HeaderText = "Serial";
-            this.ColumnSerial.Name = "ColumnSerial";
-            this.ColumnSerial.ReadOnly = true;
-            this.ColumnSerial.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.ColumnSerial.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
             // 
             // buttonADBNone
             // 
@@ -330,6 +306,30 @@
             this.buttonPush.UseVisualStyleBackColor = true;
             this.buttonPush.Click += new System.EventHandler(this.ButtonPush_Click);
             // 
+            // ColumnCheck
+            // 
+            this.ColumnCheck.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.ColumnCheck.HeaderText = "";
+            this.ColumnCheck.Name = "ColumnCheck";
+            this.ColumnCheck.ReadOnly = true;
+            this.ColumnCheck.Width = 20;
+            // 
+            // ColumnName
+            // 
+            this.ColumnName.HeaderText = "Name";
+            this.ColumnName.Name = "ColumnName";
+            this.ColumnName.ReadOnly = true;
+            this.ColumnName.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.ColumnName.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // ColumnSerial
+            // 
+            this.ColumnSerial.HeaderText = "Serial";
+            this.ColumnSerial.Name = "ColumnSerial";
+            this.ColumnSerial.ReadOnly = true;
+            this.ColumnSerial.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.ColumnSerial.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -379,9 +379,6 @@
         private System.Windows.Forms.Button buttonUninstall;
         private System.Windows.Forms.DataGridView dataGridViewFastboot;
         private System.Windows.Forms.DataGridView dataGridViewADB;
-        private System.Windows.Forms.DataGridViewCheckBoxColumn ColumnFastbootCheck;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnName;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnSerial;
         private System.Windows.Forms.Button buttonFastbootNone;
         private System.Windows.Forms.Button buttonFastbootAll;
         private System.Windows.Forms.DataGridViewCheckBoxColumn dataGridViewCheckBoxColumnFastboot;
@@ -390,6 +387,9 @@
         private System.Windows.Forms.Button buttonAddRoutine;
         private System.Windows.Forms.RichTextBox richTextBoxShell;
         private System.Windows.Forms.Button buttonPush;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn ColumnCheck;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnName;
+        private System.Windows.Forms.DataGridViewTextBoxColumn ColumnSerial;
     }
 }
 

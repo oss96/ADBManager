@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using System.Windows.Forms;
 
 namespace ADBManager
@@ -25,6 +20,7 @@ namespace ADBManager
         ///</summary>
         [DefaultValue(true)]
         public bool Selectable { get; set; }
+        /// <inheritdoc/>
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == WM_SETFOCUS && !Selectable)

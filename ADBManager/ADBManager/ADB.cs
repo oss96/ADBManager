@@ -3,10 +3,9 @@ using SharpAdbClient.DeviceCommands;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Net;
-using System.Threading;
+using System.Drawing;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace ADBManager
@@ -171,7 +170,7 @@ namespace ADBManager
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "files/aapt2.exe",
-                    Arguments = $"dump badging \"{ apkPath }\"",
+                    Arguments = $"dump badging \"{apkPath}\"",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardOutput = true
@@ -198,7 +197,7 @@ namespace ADBManager
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "files/aapt2.exe",
-                    Arguments = $"dump badging \"{ apkPath }\"",
+                    Arguments = $"dump badging \"{apkPath}\"",
                     UseShellExecute = false,
                     CreateNoWindow = true,
                     RedirectStandardOutput = true
@@ -230,13 +229,14 @@ namespace ADBManager
         internal void SetUninstallList(List<string> inputUninstallList) => unInstallList = inputUninstallList;
         internal List<TreeNode> GetDeviceDirectory(string path, DeviceData device)
         {
+            SendShellCommand("mount system", device);
             List<TreeNode> treeNodes = new List<TreeNode>();
             Process proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = @"files/adb.exe",
-                    Arguments = $" -s {device.Serial} shell ls {path}",
+                    Arguments = $" -s {device.Serial} shell ls -1 {path}",
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     RedirectStandardOutput = true
@@ -245,19 +245,31 @@ namespace ADBManager
             proc.Start();
             proc.WaitForExit();
             List<string> directories = new List<string>();
+            string line;
             while (!proc.StandardOutput.EndOfStream)
             {
-                directories.Add(proc.StandardOutput.ReadLine());
+                line = proc.StandardOutput.ReadLine();
+                if (line != "")
+                {
+                    directories.Add(line);
+                }
             }
-            foreach (string directory in directories)
-            {
-                treeNodes.Add(new TreeNode(directory));
-            }
+            if (directories.Count == 0)
+                return treeNodes;
+            if (directories.First() != path)
+                foreach (string directory in directories)
+                {
+                    TreeNode node = new TreeNode(directory)
+                    {
+                        BackColor = Color.LightGray
+                    };
+                    treeNodes.Add(node);
+                }
             if (directories.Contains("adb: error: failed to get feature set: device 'shell' not found"))
             {
                 AdbClient.Instance.KillAdb();
                 StartServer();
-                return GetDeviceDirectory(path,device);
+                return GetDeviceDirectory(path, device);
             }
             return treeNodes;
         }
@@ -266,12 +278,15 @@ namespace ADBManager
 
     class OutputReceiver : IShellOutputReceiver
     {
+        /// <inheritdoc/>
         public bool ParsesErrors { get; set; }
 
+        /// <inheritdoc/>
         public void AddOutput(string line)
         {
         }
 
+        /// <inheritdoc/>
         public void Flush()
         {
         }
