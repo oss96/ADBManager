@@ -61,9 +61,7 @@
     <Compile Include="AppList.Designer.cs">
       <DependentUpon>AppList.cs</DependentUpon>
     </Compile>
-    <Compile Include="Commands.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Enums.cs" />
     <Compile Include="ExTextBox.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -77,6 +75,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RoutineItem.cs" />
     <Compile Include="Routines.cs">
       <SubType>Form</SubType>
     </Compile>

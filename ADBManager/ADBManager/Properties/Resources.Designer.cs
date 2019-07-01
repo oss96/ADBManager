@@ -73,9 +73,19 @@ namespace ADBManager.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap Left {
+        internal static System.Drawing.Bitmap Pull {
             get {
-                object obj = ResourceManager.GetObject("Left", resourceCulture);
+                object obj = ResourceManager.GetObject("Pull", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Push {
+            get {
+                object obj = ResourceManager.GetObject("Push", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -86,16 +96,6 @@ namespace ADBManager.Properties {
         internal static System.Drawing.Bitmap Restart {
             get {
                 object obj = ResourceManager.GetObject("Restart", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap Right {
-            get {
-                object obj = ResourceManager.GetObject("Right", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

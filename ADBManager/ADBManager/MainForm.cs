@@ -179,7 +179,6 @@
             buttonFastbootNone.Enabled = false;
             RefreshDevices();
         }
-
         internal void OnDeviceConnected(object sender, DeviceDataEventArgs e)
         {
             adbAndroidDevices = ADB.GetConnectedDevice();
@@ -194,7 +193,6 @@
             ChangeLastStatus($"The device {s} has connected to this PC via ADB");
             RefreshDevices();
         }
-
         internal void OnDeviceDisconnected(object sender, DeviceDataEventArgs e)
         {
             string s = "";
@@ -208,21 +206,18 @@
             ChangeLastStatus($"The device {s} has disconnected from this PC via ADB");
             RefreshDevices();
         }
-
         private void FastbootDevice_Connected(object source, FastbootDeviceEventArgs args)
         {
             NewDevice = args.Device;
             AddDataGridRow_Fastboot();
             ChangeLastStatus($"The device {args.Device} has connected to this PC via Fastboot");
         }
-
         private void FastbootDevice_Disconnected(object source, FastbootDeviceEventArgs args)
         {
             NewDevice = args.Device;
             RemoveDataGridRow_Fastboot();
             ChangeLastStatus($"The device {args.Device} has disconnected to this PC via Fastboot");
         }
-
         private void ButtonRefresh_Click(object sender, EventArgs e)
         {
             dataGridViewADB.Rows.Clear();
@@ -244,8 +239,6 @@
             buttonReboot.Enabled = false;
             buttonShellCommand.Enabled = false;
         }
-
-
         private void ButtonReboot_Click(object sender, EventArgs e)
         {
             if (adbWorkDevices.Count != 0)
@@ -265,7 +258,6 @@
                     fastboot.RebootDevices();
             }
         }
-
         private void ButtonShellCommand_Click(object sender, EventArgs e)
         {
             foreach (AndroidDevice device in adbWorkDevices)
@@ -274,7 +266,6 @@
             }
             richTextBoxShell.Clear();
         }
-
         private void ButtonInstall_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog openFileDialog = new OpenFileDialog
@@ -300,7 +291,6 @@
                 }
             }
         }
-
         private void ButtonADBAll_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < dataGridViewADB.Rows.Count; i++)
@@ -313,7 +303,6 @@
             buttonReboot.Enabled = true;
             buttonShellCommand.Enabled = true;
         }
-
         private void ButtonADBNone_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < dataGridViewADB.Rows.Count; i++)
@@ -327,7 +316,6 @@
             buttonFastbootNone.Enabled = false;
             buttonADBNone.Enabled = false;
         }
-
         private void ButtonFastbootAll_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < dataGridViewFastboot.Rows.Count; i++)
@@ -340,7 +328,6 @@
             buttonReboot.Enabled = true;
             buttonShellCommand.Enabled = true;
         }
-
         private void ButtonFastbootNone_Click(object sender, EventArgs e)
         {
             for (int i = 0; i < dataGridViewFastboot.Rows.Count; i++)
@@ -354,7 +341,6 @@
             buttonFastbootNone.Enabled = false;
             buttonADBNone.Enabled = false;
         }
-
         private void ButtonUninstall_Click(object sender, EventArgs e)
         {
             List<DeviceData> devices = new List<DeviceData>();
@@ -364,7 +350,6 @@
             }
             adb.UninstallAPP(devices);
         }
-
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             AdbServerStatus adb = new AdbServerStatus();
@@ -374,7 +359,6 @@
             }
             fastboot.Dispose();
         }
-
         private void DataGridViewADB_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
@@ -424,7 +408,6 @@
                 }
             }
         }
-
         private void DataGridViewADB_CellValueChanged(object sender, DataGridViewCellEventArgs e)
         {
             adbWorkDevices.Clear();
@@ -464,19 +447,15 @@
                 }
             }
         }
-
-        #endregion
-
         private void ButtonAddRoutine_Click(object sender, EventArgs e)
         {
             Routines routines = new Routines(this);
             routines.ShowDialog();
         }
-
         private void ButtonPush_Click(object sender, EventArgs e)
         {
 
         }
-
+        #endregion
     }
 }
