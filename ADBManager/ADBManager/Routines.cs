@@ -80,8 +80,8 @@ namespace ADBManager
                     };
                     break;
                 case Enums.Commands.Uninstall:
-                    AppList appList = new AppList();
-                    appList.ShowDialog();
+                    //AppList appList = new AppList();
+                    //appList.ShowDialog();
                     break;
                 case Enums.Commands.Shell:
                     routineItem = new RoutineItem

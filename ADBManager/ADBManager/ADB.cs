@@ -32,9 +32,6 @@ namespace ADBManager
             {
                 AdbServer adb = new AdbServer();
                 var result = adb.StartServer(@"files/adb.exe", restartServerIfNewer: false);
-
-                AdbServerStatus adbServerStatus = adb.GetStatus();
-
                 var devices = AdbClient.Instance.GetDevices();
 
                 foreach (var item in devices)
@@ -75,6 +72,29 @@ namespace ADBManager
         {
             OutputReceiver outputReceiver = new OutputReceiver();
             AdbClient.Instance.ExecuteRemoteCommand(command, device, outputReceiver);
+        }
+        internal static string SendShellCommand(string command, string deviceSerial)
+        {
+            string result = string.Empty;
+            Process proc = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "files/adb.exe",
+                    Arguments = $" -s shell {deviceSerial} {command}",
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false
+
+                }
+            };
+            proc.Start();
+            proc.WaitForExit();
+            while (!proc.StandardOutput.EndOfStream)
+            {
+                result += proc.StandardOutput.ReadLine();
+            }
+            return result;
         }
         internal void InstallAPK(string path, List<DeviceData> devices, string appName)
         {
@@ -216,6 +236,13 @@ namespace ADBManager
                 appName = appName.Replace("'", "").Trim();
             }
             return appName;
+        }
+        internal string GetIMEI(DeviceData device)
+        {
+            string imei = string.Empty;
+            imei = SendShellCommand("service call iphonesubinfo 1", device.Serial);
+
+            return imei;
         }
         internal void StartServer()
         {

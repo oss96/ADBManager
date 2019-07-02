@@ -15,16 +15,12 @@
         private readonly ADB adb;
         private List<string> fastbootDevices = new List<string>();
         private List<string> fastbootWorkDevices = new List<string>();
-
         private delegate void RefreshCallback();
-
         private delegate void AddDataGridRowCallback_Fastboot();
-
         private delegate void RemoveDataGridRowCallback_Fastboot();
-
         private Fastboot fastboot = new Fastboot();
-
         public string NewDevice { get; set; }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainForm"/> class.
@@ -449,12 +445,14 @@
         }
         private void ButtonAddRoutine_Click(object sender, EventArgs e)
         {
-            Routines routines = new Routines(this);
-            routines.ShowDialog();
+            using (Routines routines = new Routines(this))
+            {
+                routines.ShowDialog();
+            }
         }
         private void ButtonPush_Click(object sender, EventArgs e)
         {
-
+            adb.GetIMEI(adbWorkDevices[0].GetDevice());
         }
         #endregion
     }
