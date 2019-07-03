@@ -36,7 +36,7 @@ namespace ADBManager
 
                 foreach (var item in devices)
                 {
-                    androidDevices.Add(new AndroidDevice(item.Model, item.Name, item.Product, item.Serial, item.State, item.TransportId));
+                    androidDevices.Add(new AndroidDevice(item.Model, item.Name, item.Product, item.Serial, item.State, item.TransportId, GetIMEI(item)));
                 }
             }
             catch
@@ -81,7 +81,7 @@ namespace ADBManager
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "files/adb.exe",
-                    Arguments = $" -s shell {deviceSerial} {command}",
+                    Arguments = $" -s {deviceSerial} shell {command}",
                     CreateNoWindow = true,
                     RedirectStandardOutput = true,
                     UseShellExecute = false
@@ -237,12 +237,11 @@ namespace ADBManager
             }
             return appName;
         }
-        internal string GetIMEI(DeviceData device)
+        internal static string GetIMEI(DeviceData device)
         {
             string imei = string.Empty;
-            imei = SendShellCommand("service call iphonesubinfo 1", device.Serial);
-
-            return imei;
+            imei = SendShellCommand(@"service call iphonesubinfo 1 | grep -o '[0-9a-f]\{8\} ' | tail -n+3 | while read a; do echo -n \\u${a:4:4}\\u${a:0:4}; done", device.Serial);
+            return imei.Replace("\0", "");
         }
         internal void StartServer()
         {
