@@ -183,7 +183,7 @@
             {
                 if (item.Serial == e.Device.Serial)
                 {
-                    s = item.Model;
+                    s = item.Model + ": " + item.IMEI;
                 }
             }
             ChangeLastStatus($"The device {s} has connected to this PC via ADB");
@@ -196,7 +196,7 @@
             {
                 if (item.Serial == e.Device.Serial)
                 {
-                    s = $"{item.Model} ({item.Serial})";
+                    s = item.Model + ": " + item.IMEI;
                 }
             }
             ChangeLastStatus($"The device {s} has disconnected from this PC via ADB");
@@ -222,7 +222,8 @@
             fastbootDevices = fastboot.GetDevices();
             foreach (AndroidDevice item in adbAndroidDevices)
             {
-                _ = dataGridViewADB.Rows.Add(false, item.Model, item.Serial);
+                item.IMEI = ADB.GetIMEI(item.GetDevice());
+                _ = dataGridViewADB.Rows.Add(false, item.Model, item.IMEI, item.Serial);
             }
             foreach (string device in fastbootDevices)
             {
@@ -452,7 +453,6 @@
         }
         private void ButtonPush_Click(object sender, EventArgs e)
         {
-            adb.GetIMEI(adbWorkDevices[0].GetDevice());
         }
         #endregion
     }

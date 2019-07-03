@@ -10,9 +10,10 @@ namespace ADBManager
         public string Serial { get; set; }
         public DeviceState State { get; set; }
         public string TransportID { get; set; }
+        public string IMEI { get; set; }
 
 
-        public AndroidDevice(string inputModel, string inputName, string inputProduct, string inputSerial, DeviceState inputState, string inputTransportID)
+        public AndroidDevice(string inputModel, string inputName, string inputProduct, string inputSerial, DeviceState inputState, string inputTransportID, string inputIMEI)
         {
 
             Model = inputModel;
@@ -21,6 +22,7 @@ namespace ADBManager
             Serial = inputSerial;
             State = inputState;
             TransportID = inputTransportID;
+            IMEI = inputIMEI;
         }
         public AndroidDevice()
         {
