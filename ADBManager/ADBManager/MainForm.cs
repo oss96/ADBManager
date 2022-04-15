@@ -25,7 +25,7 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="MainForm"/> class.
         /// </summary>
-        public MainForm()
+        public MainForm(Manager manager)
         {
             InitializeComponent();
             MinimumSize = Size;
@@ -34,134 +34,6 @@
             StartDeviceMonitor();
         }
 
-
-        internal void StartDeviceMonitor()
-        {
-            try
-            {
-                adb.StartServer();
-                DeviceMonitor monitor = new DeviceMonitor(new AdbSocket(new IPEndPoint(IPAddress.Loopback, AdbClient.AdbServerPort)));
-                monitor.DeviceConnected += OnDeviceConnected;
-                monitor.DeviceDisconnected += OnDeviceDisconnected;
-                monitor.Start();
-                fastboot.FastbootDeviceConnected += FastbootDevice_Connected;
-                fastboot.FastbootDeviceDisconnected += FastbootDevice_Disconnected;
-                fastboot.StartWatch();
-            }
-            catch (System.Net.Sockets.SocketException se)
-            {
-                MessageBox.Show(se.Message);
-            }
-        }
-
-        internal void SetLastStatus(string status)
-        {
-            if (changeLastStatusThread != null)
-            {
-                changeLastStatusThread.Abort();
-                changeLastStatusThread = null;
-            }
-            changeLastStatusThread = new Thread(unused => ChangeLastStatus(status));
-            changeLastStatusThread.Start();
-        }
-        internal void ChangeLastStatus(string lastStatus)
-        {
-            toolStripStatusLabelDevice.Text = "Last Status: ";
-            toolStripStatusLabelDevice.Text += lastStatus;
-        }
-        internal void RefreshDevices()
-        {
-            if (InvokeRequired)
-            {
-                RefreshCallback callback = new RefreshCallback(RefreshDevices);
-                try
-                {
-                    Invoke(callback);
-                }
-                catch (Exception)
-                {
-                    return;
-                }
-            }
-            else
-            {
-                ButtonRefresh_Click(null, null);
-            }
-        }
-        internal void AddDataGridRow_Fastboot()
-        {
-            if (dataGridViewFastboot.InvokeRequired)
-            {
-                AddDataGridRowCallback_Fastboot callback = new AddDataGridRowCallback_Fastboot(AddDataGridRow_Fastboot);
-                try
-                {
-                    Invoke(callback);
-                }
-                catch (Exception)
-                {
-                    return;
-                }
-            }
-            else
-            {
-                AddRowFastboot(NewDevice);
-            }
-        }
-        internal void RemoveDataGridRow_Fastboot()
-        {
-            if (dataGridViewFastboot.InvokeRequired)
-            {
-                RemoveDataGridRowCallback_Fastboot callback = new RemoveDataGridRowCallback_Fastboot(RemoveDataGridRow_Fastboot);
-                try
-                {
-                    Invoke(callback);
-                }
-                catch (Exception)
-                {
-                    return;
-                }
-            }
-            else
-            {
-                RemoveRowFastboot(NewDevice);
-            }
-        }
-        internal void RemoveRowFastboot(string device)
-        {
-            foreach (DataGridViewRow row in dataGridViewFastboot.Rows)
-            {
-                if ((string)row.Cells[1].Value == device)
-                {
-                    dataGridViewFastboot.Rows.Remove(row);
-                    break;
-                }
-            }
-        }
-        internal void AddRowFastboot(string device)
-        {
-            dataGridViewFastboot.Rows.Add(false, device);
-        }
-        internal void RebootADBDevice(List<DeviceData> devices)
-        {
-            switch (comboBoxRebootOptions.SelectedIndex)
-            {
-                case 0: //Reboot
-                    ADB.RebootDevice(devices);
-                    break;
-                case 1: //Recovery
-                    ADB.RebootDevice("recovery", devices);
-                    break;
-                case 2: // Bootloader
-                    ADB.RebootDevice("bootloader", devices);
-                    break;
-                case 3: //fastboot
-                    ADB.RebootDevice("fastboot", devices);
-                    break;
-                default:
-                    MessageBox.Show("Unknown mode", "Unknown Input");
-                    break;
-            }
-        }
 
         #region Events
         private void MainForm_Load(object sender, EventArgs e)
@@ -177,7 +49,7 @@
         }
         internal void OnDeviceConnected(object sender, DeviceDataEventArgs e)
         {
-            adbAndroidDevices = ADB.GetConnectedDevice();
+            adbAndroidDevices = ADB.GetConnectedDevices();
             string s = "";
             foreach (AndroidDevice item in adbAndroidDevices)
             {
@@ -218,7 +90,7 @@
         {
             dataGridViewADB.Rows.Clear();
             dataGridViewFastboot.Rows.Clear();
-            adbAndroidDevices = ADB.GetConnectedDevice();
+            adbAndroidDevices = ADB.GetConnectedDevices();
             fastbootDevices = fastboot.GetDevices();
             foreach (AndroidDevice item in adbAndroidDevices)
             {
@@ -352,7 +224,8 @@
             AdbServerStatus adb = new AdbServerStatus();
             if (adb.IsRunning)
             {
-                AdbClient.Instance.KillAdb();
+                AdbClient adbClient = new AdbClient();
+                adbClient.KillAdb();
             }
             fastboot.Dispose();
         }
@@ -442,13 +315,6 @@
                         fastbootWorkDevices.Add(fastbootDevice);
                     }
                 }
-            }
-        }
-        private void ButtonAddRoutine_Click(object sender, EventArgs e)
-        {
-            using (Routines routines = new Routines(this))
-            {
-                routines.ShowDialog();
             }
         }
         private void ButtonPush_Click(object sender, EventArgs e)

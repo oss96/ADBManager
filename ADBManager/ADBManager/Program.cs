@@ -13,7 +13,8 @@ namespace ADBManager
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Manager manager = new Manager();
+            manager.Run();
         }
     }
 }

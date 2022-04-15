@@ -9,28 +9,27 @@ namespace ADBManager
 
     class Fastboot
     {
-        public Process Proc { get; } = new Process
+        readonly ProcessStartInfo processStartInfo = new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "files/fastboot.exe",
-                Arguments = "",
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                UseShellExecute = false
-            }
+            FileName = "files/fastboot.exe",
+            Arguments = "",
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false
         };
         private List<string> devices = new List<string>();
         private readonly List<string> oldDevices = new List<string>();
         private bool runWatch;
         public event EventHandler<FastbootDeviceEventArgs> FastbootDeviceConnected;
         public event EventHandler<FastbootDeviceEventArgs> FastbootDeviceDisconnected;
-        Thread startWatch;
+        internal Thread startWatch;
+
 
         public Fastboot()
         {
 
         }
+
 
         protected virtual void OnFastbootDeviceConnected(string device)
         {
@@ -42,32 +41,46 @@ namespace ADBManager
         }
         internal List<string> GetDevices()
         {
-            Proc.StartInfo.Arguments = " devices";
-            Proc.Start();
+            Process proc = new Process();
+            proc.Exited += Proc_Exited;
+            proc.StartInfo = processStartInfo;
+            proc.StartInfo.Arguments = " devices";
+            proc.Start();
             string s = "";
-            while (!Proc.StandardOutput.EndOfStream)
+            while (!proc.StandardOutput.EndOfStream)
             {
-                s += Proc.StandardOutput.ReadLine();
+                s += proc.StandardOutput.ReadLine();
             }
             devices = s.Split(new string[] { "\tfastboot" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            proc.WaitForExit();
+            if (proc.HasExited)
+            {
+            }
             return devices;
         }
         internal void RebootDevices()
         {
             foreach (string device in GetDevices())
             {
-                Proc.StartInfo.Arguments = " reboot";
-                Proc.Start();
+                Process proc = new Process();
+                proc.Exited += Proc_Exited;
+                proc.StartInfo = processStartInfo;
+                proc.StartInfo.Arguments = " reboot";
+                proc.Start();
             }
         }
-        internal void BootImage(List<string> devices, string bootImgPath)
+        internal void BootImage(string deviceSerial, string bootImgPath)
         {
-            foreach (string device in devices)
-            {
-                Proc.StartInfo.Arguments = $" -s {device} boot {bootImgPath}";
-                Proc.Start();
-                Proc.WaitForExit();
-            }
+            Process proc = new Process();
+            proc.Exited += Proc_Exited;
+            proc.StartInfo = processStartInfo;
+            proc.StartInfo.Arguments = $" -s {deviceSerial} boot {bootImgPath}";
+            proc.Start();
+            proc.WaitForExit();
+        }
+        private void Proc_Exited(object sender, EventArgs e)
+        {
+            (sender as Process).Dispose();
         }
         public void StartWatch()
         {
@@ -82,7 +95,7 @@ namespace ADBManager
             {
                 oldDevices.Clear();
                 oldDevices.AddRange(devices);
-                GetDevices();
+                devices = GetDevices();
                 if (devices.Count > oldDevices.Count)
                 {
                     foreach (var item in devices)
@@ -105,7 +118,7 @@ namespace ADBManager
                         }
                     }
                 }
-                Thread.Sleep(500);
+                Thread.Sleep(1000);
             }
         }
         internal void Dispose()
@@ -113,13 +126,15 @@ namespace ADBManager
             Thread stopWatchThread = new Thread(unused => KillWatch());
             stopWatchThread.Start();
         }
-        protected void KillWatch()
+        internal void KillWatch()
         {
             runWatch = false;
             if (startWatch != null)
             {
                 startWatch.Abort();
+                startWatch = null;
             }
+            this.Dispose();
         }
     }
 }

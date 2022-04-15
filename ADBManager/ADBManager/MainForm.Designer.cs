@@ -361,7 +361,6 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(822, 450);
-            this.Controls.Add(this.buttonInstallBlueworld);
             this.Controls.Add(this.buttonPush);
             this.Controls.Add(this.richTextBoxShell);
             this.Controls.Add(this.buttonAddRoutine);
