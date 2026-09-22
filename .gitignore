@@ -4,6 +4,7 @@
 # Swift
 apps/macos/.build/
 apps/macos/.swiftpm/
+apps/macos/lib/
 # .NET / WinUI
 apps/windows/**/bin/
 apps/windows/**/obj/

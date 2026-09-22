@@ -38,7 +38,7 @@ Out of scope for v1: native USB fastboot, `flash`, split-APK install, resource
 
 ```
 ┌──────────── apps/macos (SwiftUI) ──┐ ┌── apps/windows (WinUI 3, C#) ─┐ ┌─ apps/linux (GTK4/Adw, Rust) ─┐
-│ AdbmCore.swift  (thin wrapper)     │ │ AdbmCore.cs  (LibraryImport)  │ │ uses adbm-core directly       │
+│ Core.swift  (thin wrapper)         │ │ CoreBridge.cs (LibraryImport) │ │ uses adbm-core directly       │
 └──────────────┬─────────────────────┘ └──────────────┬────────────────┘ └──────────────┬────────────────┘
                │  C ABI, JSON in / JSON out           │                                 │ Rust API
                ▼                                      ▼                                 ▼
@@ -57,9 +57,8 @@ Out of scope for v1: native USB fastboot, `flash`, split-APK install, resource
 
 - **ADB:** speak the ADB host protocol over TCP 127.0.0.1:5037 natively
   (`host:version`, `host:track-devices-l`, `host:transport:<serial>`,
-  `host:features`, `shell:` / `shell,v2:`, `sync:`, `reboot:`). The adb
-  binary is spawned only for server lifecycle (`start-server`) and
-  `connect` / `disconnect`.
+  `host:features`, `shell:` / `shell,v2:`, `sync:`, `reboot:`,
+  `host:connect:`). The adb binary is spawned only to start the server.
 - **Install:** push the APK with sync to `/data/local/tmp/` and run
   `pm install -r`. This works on every Android version, and it lets the
   same push be reused across devices. It avoids `cmd package`, which needs
@@ -88,6 +87,7 @@ char     *adbm_core_call(AdbmCore *, const char *cmd_json); // Response JSON, ca
 char     *adbm_core_next_event(AdbmCore *, uint32_t timeout_ms); // NULL on timeout
 void      adbm_core_free(AdbmCore *);                     // stops runtime
 void      adbm_string_free(char *);
+char     *adbm_last_error(void);                          // why adbm_core_new failed, caller frees
 const char *adbm_version(void);                           // static, do not free
 ```
 
@@ -193,3 +193,27 @@ docs/                      this plan, architecture notes
 - **Licensing:** v1 does not bundle adb or fastboot. The user installs
   Android platform-tools, and the app auto-detects them. This avoids
   redistribution questions about platform-tools.
+
+## 9. Execution notes (what changed while building)
+
+- **Reboot grace.** The first registry design pruned a device the moment it
+  left adb. A device that reboots is gone from adb before fastboot's next
+  poll sees it, so its row, position and name were lost. Now rows are
+  remembered for 90 s, and a device we rebooted shows as "Rebooting…" until
+  it reappears. A stress run (about 5 % failures across 150 runs) then found
+  a second bug: the periodic poll cleared the "Rebooting…" mark while the
+  device was still listed. The fix clears it only when the device returns
+  after a gap or changes mode. The regression test is in `registry.rs`.
+- **Windows UI in C#, not XAML.** The XAML compiler is a Windows-only
+  executable. With the UI built in C# (the same WinUI 3 controls), the whole
+  app type-checks on Linux. That check caught real errors: `ScrollViewer`
+  and `Border` are sealed in WinUI 3. List rows are also built in code rather
+  than with runtime `{Binding}` templates, so they can't fail only at runtime.
+- **Logic layer shared across the Windows app and its test.**
+  `AdbManager.Core` (net8.0) holds the bridge, models and view models. It is
+  run on Linux against the real core (`scripts/check-bridges.sh`).
+- **The Swift bridge is also run on Linux** against the real core. This
+  checks that the Swift models decode the core's JSON, which is the part most
+  likely to drift.
+- **Accent on Windows.** Windows has no "default" accent to detect, so the
+  system accent is always used there (see `design/DESIGN.md`).

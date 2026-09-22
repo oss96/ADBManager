@@ -1,0 +1,5 @@
+module CAdbm [system] {
+    header "adbm.h"
+    link "adbm_ffi"
+    export *
+}

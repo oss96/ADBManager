@@ -71,9 +71,10 @@ the only signal.
 - Serials, package names, paths and shell output use a **monospace** face
   (SF Mono / Cascadia Mono / Adwaita Mono or Monospace), always with tabular
   numbers.
-- Window minimum size is 900 × 560. Below 1100 px wide, the inspector
-  collapses: into a sheet on macOS, a flyout on Windows, and an
-  `AdwOverlaySplitView` on Linux.
+- Window minimum size is 900 × 560. The inspector can be hidden: the
+  toolbar toggle on macOS, and an `AdwOverlaySplitView` on Linux, whose
+  sidebar also collapses below 720 sp. *(Planned: automatic collapse below
+  1100 px on every platform.)*
 
 ## Behaviour
 
@@ -86,13 +87,14 @@ the only signal.
   confirmation with a native alert. The alert names the count and the
   target: "Uninstall com.example.app from 5 devices?" The confirm button
   repeats the verb.
-- **Drag & drop:** dropping an APK anywhere installs it on the targets.
-  Dropping files on Files pushes them to the current folder.
+- **Drag & drop:** dropping an APK anywhere opens it in Apps, ready to
+  install on the targets. *(Planned: dropping files on Files pushes them to
+  the current folder.)*
 - **Cancellation:** every running job has a Cancel button in Activity.
 - **Empty states** give the one next step: "Connect a device with USB
-  debugging enabled", with a link to "How to enable USB debugging".
-- **adb missing:** a full-window state with detected search paths and a
-  "Choose adb…" button.
+  debugging enabled, or connect over the network." *(Planned: a link to "How
+  to enable USB debugging".)*
+- **adb missing:** a full-window state with a "Choose adb…" button.
 
 ## Copy
 
@@ -105,11 +107,15 @@ the only signal.
 ## Colour
 
 The accent is **Bridge teal**. It sits between Android green and the blue used
-by the platforms, and is distinctive without being a brand colour. On macOS
-and Windows the accent is **only used when the user's system accent is left
-at default / multicolour**. Otherwise the system accent wins. On Linux,
-libadwaita 1.5 has no system accent, so Bridge teal is applied through
-`@define-color accent_bg_color`.
+by the platforms, and is distinctive without being a brand colour.
+
+- **macOS**: Bridge teal is the tint while the user keeps the default
+  (multicolour) accent. Any accent the user has chosen wins.
+- **Windows**: the system accent is always used for controls, because Windows
+  has no "multicolour" default to detect. Bridge teal appears only in the
+  targets pill.
+- **Linux**: libadwaita 1.5 has no system accent, so Bridge teal is applied
+  through `@define-color accent_bg_color`.
 
 The values are in `tokens.json`. Each colour has light and dark values, and
 every text/background pair meets WCAG AA (4.5:1).
@@ -119,9 +125,12 @@ every text/background pair meets WCAG AA (4.5:1).
 | Element | macOS (SwiftUI) | Windows (WinUI 3) | Linux (GTK4 + Adw 1.5) |
 |---|---|---|---|
 | Shell | `NavigationSplitView` + `.inspector` | `NavigationView` (Left) + Mica | `AdwNavigationSplitView` + `AdwOverlaySplitView` |
-| Device list | `Table` with multi-select | `ListView` with grid-style item template, Extended selection | `GtkColumnView` + `GtkMultiSelection` |
+| Device list | `Table` with multi-select | `ListView` of grid rows, Extended selection | `GtkColumnView` + `GtkMultiSelection` |
 | Toolbar | `.toolbar` items | `CommandBar` | `AdwHeaderBar` in `AdwToolbarView` |
-| Reboot menu | `Menu` | `MenuFlyout` on `DropDownButton` | `GtkMenuButton` + `GMenu` |
+| Reboot menu | `Menu` | `MenuFlyout` on an `AppBarButton` | `GtkMenuButton` + `GMenu` |
 | Notifications | overlay banner | `InfoBar` | `AdwToast` |
 | Confirm | `.confirmationDialog` | `ContentDialog` | `AdwAlertDialog` |
 | Preferences | `Settings` scene | Settings page in nav footer | `AdwPreferencesDialog` |
+
+On Windows the UI is built in C# (no XAML markup), from the same WinUI 3
+controls. That way the whole app type-checks on any OS.
