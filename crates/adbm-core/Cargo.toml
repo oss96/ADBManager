@@ -1,0 +1,25 @@
+[package]
+name = "adbm-core"
+description = "Core of ADB Manager: native ADB host protocol client, fastboot, APK reader and job engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+# Exposes an in-process fake adb server for integration tests of dependent crates.
+test-support = []
+
+[dependencies]
+flume = "0.12.0"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "net", "io-util", "process", "time", "sync", "macros", "fs"] }
+tokio-util = "0.7.19"
+tracing = "0.1.44"
+zip = { version = "4.2.0", default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+adbm-core = { path = ".", features = ["test-support"] }
+tempfile = "3.27.0"

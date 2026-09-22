@@ -1,0 +1,19 @@
+[package]
+name = "adbm-ffi"
+description = "C ABI for ADB Manager's core (JSON in, JSON out), used by the SwiftUI and WinUI apps"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "adbm_ffi"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+adbm-core = { path = "../adbm-core" }
+serde_json = "1"
+
+[dev-dependencies]
+adbm-core = { path = "../adbm-core", features = ["test-support"] }
+tempfile = "3"
