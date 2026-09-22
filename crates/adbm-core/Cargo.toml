@@ -23,3 +23,7 @@ zip = { version = "4.2.0", default-features = false, features = ["deflate"] }
 [dev-dependencies]
 adbm-core = { path = ".", features = ["test-support"] }
 tempfile = "3.27.0"
+
+[[example]]
+name = "fake_adb"
+required-features = ["test-support"]

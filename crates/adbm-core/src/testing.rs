@@ -19,6 +19,10 @@ pub struct FakeDevice {
     /// adb state word: device, unauthorized, recovery, ...
     pub state: String,
     pub shell_v2: bool,
+    pub model: String,
+    pub release: String,
+    pub sdk: u32,
+    pub battery: u8,
 }
 
 #[derive(Default)]
@@ -42,7 +46,12 @@ pub struct FakeAdb {
 impl FakeAdb {
     /// Start on an ephemeral port inside the current tokio runtime.
     pub async fn start(devices: Vec<FakeDevice>) -> Self {
-        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        Self::start_on(0, devices).await
+    }
+
+    /// Start on a given port (0 = ephemeral).
+    pub async fn start_on(port: u16, devices: Vec<FakeDevice>) -> Self {
+        let listener = TcpListener::bind(("127.0.0.1", port)).await.expect("bind");
         let port = listener.local_addr().unwrap().port();
         let mut st = FakeState { devices, ..Default::default() };
         for d in ["/", "/sdcard", "/data", "/data/local", "/data/local/tmp", "/system"] {
@@ -86,7 +95,23 @@ impl FakeAdb {
     }
 
     pub fn device(serial: &str, state: &str) -> FakeDevice {
-        FakeDevice { serial: serial.into(), state: state.into(), shell_v2: true }
+        FakeDevice {
+            serial: serial.into(),
+            state: state.into(),
+            shell_v2: true,
+            model: "Pixel 8 Pro".into(),
+            release: "15".into(),
+            sdk: 35,
+            battery: 82,
+        }
+    }
+
+    pub fn with_model(mut d: FakeDevice, model: &str, release: &str, sdk: u32, battery: u8) -> FakeDevice {
+        d.model = model.into();
+        d.release = release.into();
+        d.sdk = sdk;
+        d.battery = battery;
+        d
     }
 
     fn list_text(&self) -> String {
@@ -94,10 +119,16 @@ impl FakeAdb {
         st.devices
             .iter()
             .map(|d| {
-                format!(
-                    "{:<22} {} usb:1-1 product:husky model:Pixel_8_Pro device:husky transport_id:1\n",
-                    d.serial, d.state
-                )
+                // Like real adb: no product/model until the device is authorized.
+                if d.state == "device" || d.state == "recovery" {
+                    let model = d.model.replace(' ', "_");
+                    format!(
+                        "{:<22} {} usb:1-1 product:husky model:{model} device:husky transport_id:1\n",
+                        d.serial, d.state
+                    )
+                } else {
+                    format!("{:<22} {} usb:1-2 transport_id:2\n", d.serial, d.state)
+                }
             })
             .collect()
     }
@@ -107,7 +138,17 @@ impl FakeAdb {
         let mut st = self.state.lock().unwrap();
         st.shell_log.push(format!("{serial}: {cmd}"));
         if cmd.starts_with("echo manufacturer=") {
-            return ("manufacturer=Google\nmodel=Pixel 8 Pro\nrelease=15\nsdk=35\nbuild=AP4A.250105.002\n  status: 2\n  level: 82\n".into(), String::new(), 0, false);
+            let d = st
+                .devices
+                .iter()
+                .find(|d| d.serial == serial)
+                .cloned()
+                .unwrap_or_else(|| Self::device(serial, "device"));
+            let out = format!(
+                "manufacturer=Google\nmodel={}\nrelease={}\nsdk={}\nbuild=AP4A.250105.002\n  status: 2\n  level: {}\n",
+                d.model, d.release, d.sdk, d.battery
+            );
+            return (out, String::new(), 0, false);
         }
         if let Some(rest) = cmd.strip_prefix("pm install ") {
             let path = rest.split_whitespace().last().unwrap_or("").trim_matches('\'');

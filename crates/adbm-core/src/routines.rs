@@ -72,11 +72,11 @@ fn default_timeout() -> u64 {
 impl Step {
     pub fn title(&self) -> String {
         match self {
-            Step::Install { path } => format!("Install {}", short(path)),
+            Step::Install { path } => format!("Install {}", or(short(path), "an APK")),
             Step::Uninstall { package } => format!("Uninstall {package}"),
             Step::Shell { command, .. } => format!("Run “{command}”"),
             Step::Reboot { mode } => format!("Reboot to {}", mode.label()),
-            Step::Push { local, remote } => format!("Push {} to {remote}", short(local)),
+            Step::Push { local, remote } => format!("Push {} to {remote}", or(short(local), "a folder")),
             Step::Pull { remote, .. } => format!("Pull {remote}"),
             Step::WaitFor { target, timeout_s } => format!(
                 "Wait for {} (up to {timeout_s} s)",
@@ -87,7 +87,7 @@ impl Step {
                     WaitTarget::Adb => "adb",
                 }
             ),
-            Step::FastbootBoot { image } => format!("Boot {}", short(image)),
+            Step::FastbootBoot { image } => format!("Boot {} (without flashing)", or(short(image), "an image")),
             Step::Delay { ms } => format!("Wait {:.1} s", *ms as f64 / 1000.0),
         }
     }
@@ -104,6 +104,14 @@ impl Step {
             Step::FastbootBoot { image } if blank(image) => Some("choose a boot image"),
             _ => None,
         }
+    }
+}
+
+fn or<'a>(s: &'a str, fallback: &'a str) -> &'a str {
+    if s.is_empty() {
+        fallback
+    } else {
+        s
     }
 }
 
@@ -179,7 +187,7 @@ mod tests {
     fn template_requires_paths() {
         let t = &templates()[0];
         let err = t.validate().unwrap_err();
-        assert!(err.starts_with("Step 3 (Boot "), "{err}");
+        assert_eq!(err, "Step 3 (Boot an image (without flashing)): choose a boot image.");
     }
 
     #[test]
