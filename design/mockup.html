@@ -1,0 +1,349 @@
+<title>ADB Manager Design</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --accent:#0F7B6C; --on-accent:#FFFFFF; --accent-subtle:#E3F4F0;
+  --bg:#F4F7F6; --surface:#FFFFFF; --border:#D3DDDB; --text:#15201E; --text2:#52615E;
+  --online-fg:#1A7336; --online-bg:#E2F3E6;
+  --attn-fg:#8A5A00; --attn-bg:#FBF0D9;
+  --muted-fg:#5B6765; --muted-bg:#ECEFEE;
+  --rec-fg:#7443C9; --rec-bg:#EFE8FB;
+  --fb-fg:#1F5FBF; --fb-bg:#E4EDFB;
+  --err-fg:#B42318; --err-bg:#FCE8E6;
+  --chrome:#E9EEED; --sidebar:#EEF2F1; --sel:#D4EEE8; --row-alt:#F8FAFA;
+  --shadow:0 1px 2px rgba(10,30,28,.06),0 12px 40px rgba(10,30,28,.12);
+  --sans:"Instrument Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --accent:#3DD6B5; --on-accent:#062B25; --accent-subtle:#123A33;
+  --bg:#121817; --surface:#1B2322; --border:#2D3A38; --text:#E4ECEA; --text2:#98A9A6;
+  --online-fg:#6BD68B; --online-bg:#173222; --attn-fg:#F2C14E; --attn-bg:#3A2E12;
+  --muted-fg:#A3B0AE; --muted-bg:#262E2D; --rec-fg:#C4A6FF; --rec-bg:#2C2342;
+  --fb-fg:#8DB8FF; --fb-bg:#1B2A44; --err-fg:#FF8A80; --err-bg:#3D1D1B;
+  --chrome:#1F2826; --sidebar:#182020; --sel:#15403A; --row-alt:#1E2726;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 16px 48px rgba(0,0,0,.45);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --accent:#3DD6B5; --on-accent:#062B25; --accent-subtle:#123A33;
+  --bg:#121817; --surface:#1B2322; --border:#2D3A38; --text:#E4ECEA; --text2:#98A9A6;
+  --online-fg:#6BD68B; --online-bg:#173222; --attn-fg:#F2C14E; --attn-bg:#3A2E12;
+  --muted-fg:#A3B0AE; --muted-bg:#262E2D; --rec-fg:#C4A6FF; --rec-bg:#2C2342;
+  --fb-fg:#8DB8FF; --fb-bg:#1B2A44; --err-fg:#FF8A80; --err-bg:#3D1D1B;
+  --chrome:#1F2826; --sidebar:#182020; --sel:#15403A; --row-alt:#1E2726;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 16px 48px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font:15px/1.55 var(--sans);padding-inline:20px;padding-block:40px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:40px}
+header{display:grid;gap:10px;max-width:68ch}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(30px,4.4vw,46px);line-height:1.05;letter-spacing:-.02em;margin:0;font-weight:600;text-wrap:balance}
+h2{font-size:20px;margin:0 0 4px;font-weight:600;letter-spacing:-.01em}
+p{margin:0;color:var(--text2)}
+code,.mono{font-family:var(--mono);font-size:.88em}
+
+/* platform switcher */
+.switch{display:flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;width:max-content;max-width:100%;flex-wrap:wrap}
+.switch button{font:500 14px var(--sans);color:var(--text2);background:none;border:0;border-radius:7px;padding:7px 14px;cursor:pointer}
+.switch button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.switch button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stage-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap}
+.stage-note{font-size:14px;max-width:52ch}
+.scroll{overflow-x:auto;padding:4px 4px 24px;margin:-4px}
+
+/* ---------- window (shared structure) ---------- */
+.win{min-width:980px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);overflow:hidden;display:grid;grid-template-rows:auto 1fr;height:600px;font-size:13px;position:relative}
+.bar{display:flex;align-items:center;gap:10px;padding:0 12px;height:52px;background:var(--chrome);border-bottom:1px solid var(--border)}
+.bar .title{font-weight:600}
+.bar .sub{color:var(--text2);font-size:12px}
+.bar .spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:6px;font:inherit;font-size:12.5px;white-space:nowrap}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn svg{width:14px;height:14px;flex:none}
+.targets{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:var(--accent-subtle);color:var(--accent);font-weight:600;font-size:12px}
+.body{display:grid;grid-template-columns:200px 1fr 280px;min-height:0}
+.side{background:var(--sidebar);border-right:1px solid var(--border);padding:10px 8px;display:flex;flex-direction:column;gap:2px}
+.nav{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:6px;color:var(--text)}
+.nav svg{width:16px;height:16px;color:var(--text2);flex:none}
+.nav.on{background:var(--sel)}
+.nav.on svg{color:var(--accent)}
+.nav .badge{margin-left:auto;font:500 11px var(--mono);color:var(--text2)}
+.side .grow{flex:1}
+.main{display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.main-head{display:flex;align-items:center;gap:10px;padding:12px 16px 8px}
+.main-head h3{margin:0;font-size:17px;font-weight:600}
+.main-head .count{color:var(--text2)}
+.search{margin-left:auto;height:26px;width:200px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:flex;align-items:center;padding:0 8px;color:var(--text2);gap:6px;font-size:12px}
+.search svg{width:13px;height:13px}
+table{font:inherit;border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font-weight:500;color:var(--text2);text-align:left;font-size:11.5px;padding:6px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:0 10px;height:32px;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent);white-space:nowrap}
+tr.sel td{background:var(--sel)}
+tr.focus td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+td.serial{font-family:var(--mono);font-size:11.5px;color:var(--text2)}
+td.model{font-weight:600}
+td .dim{color:var(--text2);font-weight:400}
+.chk{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--border);display:inline-grid;place-items:center;vertical-align:middle}
+tr.sel .chk{background:var(--accent);border-color:var(--accent)}
+tr.sel .chk::after{content:"";width:6px;height:3px;border:2px solid var(--on-accent);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.chip{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 8px 0 6px;border-radius:999px;font-size:11.5px;font-weight:600}
+.chip svg{width:11px;height:11px}
+.chip.online{color:var(--online-fg);background:var(--online-bg)}
+.chip.attn{color:var(--attn-fg);background:var(--attn-bg)}
+.chip.muted{color:var(--muted-fg);background:var(--muted-bg)}
+.chip.rec{color:var(--rec-fg);background:var(--rec-bg)}
+.chip.fb{color:var(--fb-fg);background:var(--fb-bg)}
+.batt{display:inline-flex;align-items:center;gap:6px}
+.batt i{display:inline-block;width:26px;height:6px;border-radius:3px;background:var(--muted-bg);position:relative;overflow:hidden}
+.batt i b{position:absolute;inset:0 auto 0 0;background:var(--online-fg);border-radius:3px}
+.hint{padding:10px 16px;color:var(--text2);font-size:12px;display:flex;gap:8px;align-items:center}
+.hint svg{width:14px;height:14px;color:var(--attn-fg)}
+.insp{border-left:1px solid var(--border);padding:16px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.insp h4{margin:0;font-size:15px}
+.insp .serial{font-family:var(--mono);font-size:11.5px;color:var(--text2)}
+dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:12.5px}
+dt{color:var(--text2)}
+dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.sect{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text2)}
+.qa{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.qa .btn{justify-content:center}
+.job{border:1px solid var(--border);border-radius:8px;padding:10px;display:grid;gap:8px;background:var(--bg)}
+.job .row{display:flex;justify-content:space-between;gap:8px;font-size:12px}
+.job .name{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.prog{height:4px;border-radius:2px;background:var(--muted-bg);overflow:hidden}
+.prog b{display:block;height:100%;width:66%;background:var(--accent)}
+.toast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:9px 10px 9px 14px;font-size:12.5px;background:var(--text);color:var(--surface);border-radius:8px;box-shadow:var(--shadow)}
+.toast a{color:var(--surface);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+.lights{display:flex;gap:8px}
+.lights i{width:12px;height:12px;border-radius:50%;display:block}
+.lights i:nth-child(1){background:#FF5F57}.lights i:nth-child(2){background:#FEBC2E}.lights i:nth-child(3){background:#28C840}
+.caption-btns{display:flex;margin-left:auto;margin-right:-12px;height:100%}
+.caption-btns span{width:46px;display:grid;place-items:center;color:var(--text2);font-size:14px}
+
+/* ---------- macOS ---------- */
+.win.mac{border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",var(--sans)}
+.mac .bar{background:color-mix(in srgb,var(--chrome) 85%,transparent);backdrop-filter:blur(20px)}
+.mac .side{background:color-mix(in srgb,var(--sidebar) 80%,transparent);padding-top:8px}
+.mac .nav{padding:5px 8px}
+.mac .caption-btns{display:none}
+.mac .main-head h3{font-size:20px}
+.mac .toast{background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px}
+.mac .toast a{color:var(--accent)}
+
+/* ---------- Windows 11 ---------- */
+.win.win11{border-radius:8px;font-family:"Segoe UI Variable Text","Segoe UI",var(--sans);font-size:13.5px}
+.win11 .bar{height:48px;background:var(--sidebar);border-bottom:0}
+.win11 .lights{display:none}
+.win11 .body{background:var(--sidebar)}
+.win11 .side{border-right:0;background:transparent;padding:4px 6px}
+.win11 .nav{padding:9px 12px;border-radius:5px;position:relative}
+.win11 .nav.on{background:color-mix(in srgb,var(--text) 6%,transparent)}
+.win11 .nav.on::before{content:"";position:absolute;left:0;top:50%;height:16px;margin-top:-8px;width:3px;border-radius:2px;background:var(--accent)}
+.win11 .main{background:var(--surface);border-top-left-radius:8px;border:1px solid var(--border);border-width:1px 0 0 1px}
+.win11 .insp{background:var(--surface)}
+.win11 td{height:40px}
+.win11 .btn{border-radius:4px;height:30px}
+.win11 .chip{border-radius:4px}
+.win11 .toast{left:16px;right:296px;transform:none;bottom:12px;background:var(--accent-subtle);color:var(--text);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-radius:6px}
+.win11 .toast a{color:var(--accent)}
+
+/* ---------- GNOME / libadwaita ---------- */
+.win.gnome{border-radius:12px;font-family:Cantarell,"Adwaita Sans","Noto Sans",var(--sans)}
+.gnome .bar{height:46px;background:var(--surface);border-bottom:1px solid var(--border)}
+.gnome .lights,.gnome .caption-btns{display:none}
+.gnome .close{margin-left:4px;width:24px;height:24px;border-radius:50%;background:var(--muted-bg);display:grid;place-items:center;color:var(--text2);font-size:12px}
+.gnome .side{background:var(--sidebar);padding:6px}
+.gnome .nav{padding:9px 10px;border-radius:8px}
+.gnome .nav.on{background:color-mix(in srgb,var(--text) 9%,transparent)}
+.gnome .nav.on svg{color:var(--text)}
+.gnome .btn{border:0;background:color-mix(in srgb,var(--text) 8%,transparent);border-radius:6px;font-weight:600}
+.gnome .btn.primary{background:var(--accent)}
+.gnome td{height:44px}
+.gnome .main{background:var(--bg)}
+.gnome .list{margin:0 16px;background:var(--surface);border-radius:12px;box-shadow:0 0 0 1px var(--border);overflow:hidden}
+.gnome .toast{border-radius:999px;padding-left:18px}
+.win:not(.gnome) .close{display:none}
+.win:not(.gnome) .list{border-top:1px solid var(--border)}
+
+/* legend */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:32px}
+.legend{display:grid;gap:10px}
+.lrow{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:center;font-size:14px}
+.lrow p{font-size:13.5px}
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.sw div{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface);font-size:12px}
+.sw i{display:block;height:44px}
+.sw span{display:block;padding:6px 8px}
+.sw span b{display:block;font-weight:600;font-size:12.5px}
+.sw span code{color:var(--text2)}
+.principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+.principles div{display:grid;gap:6px;align-content:start}
+.principles h3{margin:0;font-size:16px;font-weight:600}
+.principles p{font-size:14px}
+@media (prefers-reduced-motion:no-preference){.win{transition:border-radius .2s}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-dev" viewBox="0 0 16 16"><rect x="4" y="1.5" width="8" height="13" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7 12.2h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-apps" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="5" rx="1.2"/><rect x="9" y="2" width="5" height="5" rx="1.2"/><rect x="2" y="9" width="5" height="5" rx="1.2"/><rect x="9" y="9" width="5" height="5" rx="1.2"/></g></symbol>
+  <symbol id="i-files" viewBox="0 0 16 16"><path d="M1.8 4.2c0-.7.5-1.2 1.2-1.2h3.2l1.4 1.6H13c.7 0 1.2.5 1.2 1.2v6.4c0 .7-.5 1.2-1.2 1.2H3c-.7 0-1.2-.5-1.2-1.2z" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-shell" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="11" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M4.5 6.2l2 1.8-2 1.8M8 10.2h3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-rout" viewBox="0 0 16 16"><g stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 4h8M6 8h8M6 12h8"/><circle cx="2.8" cy="4" r=".6" fill="currentColor"/><circle cx="2.8" cy="8" r=".6" fill="currentColor"/><circle cx="2.8" cy="12" r=".6" fill="currentColor"/></g></symbol>
+  <symbol id="i-act" viewBox="0 0 16 16"><path d="M1.5 8.5h3l1.8-4.5 3 8 1.8-3.5h3.4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-set" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 16 16"><path d="M8 2v8M4.8 7l3.2 3.2L11.2 7M2.5 13.5h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-reb" viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v2.8h-2.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-net" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/></g></symbol>
+  <symbol id="i-ok" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5.5" fill="currentColor"/><path d="M3.6 6.2l1.6 1.5 3.2-3.3" fill="none" stroke="var(--surface)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 12 12"><rect x="2" y="5" width="8" height="6" rx="1.4" fill="currentColor"/><path d="M4 5V3.8a2 2 0 0 1 4 0V5" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-off" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3.2 8.8l5.6-5.6" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 12 12"><path d="M7 .8L2.2 7h3.2L4.8 11.2 9.8 5H6.6z" fill="currentColor"/></symbol>
+  <symbol id="i-rec" viewBox="0 0 12 12"><rect x="1" y="3" width="10" height="7.5" rx="1.5" fill="currentColor"/><path d="M4.4 3V1.8h3.2V3M6 5v3.4M4.3 6.7h3.4" fill="none" stroke="var(--surface)" stroke-width="1.2"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 1.8l6.5 11.5H1.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6.5v3M8 11.3v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-find" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">ADB Manager · design v1</span>
+    <h1>One fleet console, three native apps</h1>
+    <p>ADB Manager has the same structure, vocabulary and device-state colours on every platform. The window, type, controls and icons come from the host platform. Below is the Devices screen, which is the app's home. It shows three targets selected, an install job running on them, and the Pixel 8 Pro open in the inspector. The device rows are example data.</p>
+  </header>
+
+  <section>
+    <div class="stage-head">
+      <div class="switch" role="group" aria-label="Platform">
+        <button type="button" id="p-mac" data-p="mac" aria-pressed="true">macOS · SwiftUI</button>
+        <button type="button" id="p-win" data-p="win11" aria-pressed="false">Windows · WinUI 3</button>
+        <button type="button" id="p-gnome" data-p="gnome" aria-pressed="false">Linux · GTK4 + Adwaita</button>
+      </div>
+      <p class="stage-note" id="note">macOS: a NavigationSplitView with a translucent sidebar, a unified toolbar, a Table, an inspector pane and an overlay banner.</p>
+    </div>
+    <div class="scroll" style="margin-top:16px">
+      <div class="win mac" id="win">
+        <div class="bar">
+          <div class="lights"><i></i><i></i><i></i></div>
+          <span class="title" style="margin-left:8px">Devices</span>
+          <span class="targets">3 targets</span>
+          <span class="spacer"></span>
+          <span class="btn"><svg><use href="#i-net"/></svg>Connect…</span>
+          <span class="btn"><svg><use href="#i-reb"/></svg>Reboot ▾</span>
+          <span class="btn primary"><svg><use href="#i-dl"/></svg>Install APK…</span>
+          <span class="close">✕</span>
+          <span class="caption-btns"><span>—</span><span>▢</span><span>✕</span></span>
+        </div>
+        <div class="body">
+          <nav class="side" aria-label="Sections">
+            <span class="nav on"><svg><use href="#i-dev"/></svg>Devices<span class="badge">6</span></span>
+            <span class="nav"><svg><use href="#i-apps"/></svg>Apps</span>
+            <span class="nav"><svg><use href="#i-files"/></svg>Files</span>
+            <span class="nav"><svg><use href="#i-shell"/></svg>Shell</span>
+            <span class="nav"><svg><use href="#i-rout"/></svg>Routines<span class="badge">4</span></span>
+            <span class="nav"><svg><use href="#i-act"/></svg>Activity<span class="badge">1</span></span>
+            <span class="grow"></span>
+            <span class="nav"><svg><use href="#i-set"/></svg>Settings</span>
+          </nav>
+          <div class="main">
+            <div class="main-head">
+              <h3>Devices</h3><span class="count">6 connected</span>
+              <span class="search"><svg><use href="#i-find"/></svg>Filter by model or serial</span>
+            </div>
+            <div class="list">
+            <table>
+              <thead><tr><th style="width:28px"></th><th>Device</th><th>Serial</th><th>State</th><th>Android</th><th>Battery</th></tr></thead>
+              <tbody>
+                <tr class="sel focus"><td><span class="chk"></span></td><td class="model">Pixel 8 Pro</td><td class="serial">3A281FDJH00B7C</td><td><span class="chip online"><svg><use href="#i-ok"/></svg>Online</span></td><td>15 <span class="dim">· API 35</span></td><td><span class="batt"><i><b style="width:82%"></b></i>82%</span></td></tr>
+                <tr class="sel"><td><span class="chk"></span></td><td class="model">Galaxy Tab S9</td><td class="serial">R52W70ABC1D</td><td><span class="chip online"><svg><use href="#i-ok"/></svg>Online</span></td><td>14 <span class="dim">· API 34</span></td><td><span class="batt"><i><b style="width:64%"></b></i>64%</span></td></tr>
+                <tr class="sel"><td><span class="chk"></span></td><td class="model">sdk_gphone64 <span class="dim">emulator</span></td><td class="serial">emulator-5554</td><td><span class="chip online"><svg><use href="#i-ok"/></svg>Online</span></td><td>15 <span class="dim">· API 35</span></td><td><span class="batt"><i><b style="width:100%"></b></i>100%</span></td></tr>
+                <tr><td><span class="chk"></span></td><td class="model">Pixel 7a</td><td class="serial">29051JEGR09412</td><td><span class="chip fb"><svg><use href="#i-bolt"/></svg>Bootloader</span></td><td class="dim">—</td><td class="dim">—</td></tr>
+                <tr><td><span class="chk"></span></td><td class="model">OnePlus 12 <span class="dim">TWRP</span></td><td class="serial">b7e41c09</td><td><span class="chip rec"><svg><use href="#i-rec"/></svg>Recovery</span></td><td>14 <span class="dim">· API 34</span></td><td class="dim">—</td></tr>
+                <tr><td><span class="chk"></span></td><td class="model dim">Unknown device</td><td class="serial">ZY22J4KQ9P</td><td><span class="chip attn"><svg><use href="#i-lock"/></svg>Unauthorized</span></td><td class="dim">—</td><td class="dim">—</td></tr>
+              </tbody>
+            </table>
+            </div>
+            <div class="hint"><svg><use href="#i-warn"/></svg>ZY22J4KQ9P is waiting for you to confirm the USB debugging prompt on the device.</div>
+          </div>
+          <aside class="insp">
+            <div><h4>Pixel 8 Pro</h4><div class="serial">husky · 3A281FDJH00B7C</div></div>
+            <dl>
+              <dt>State</dt><dd><span class="chip online"><svg><use href="#i-ok"/></svg>Online</span></dd>
+              <dt>Android</dt><dd>15 (API 35)</dd>
+              <dt>Build</dt><dd class="mono">AP4A.250105.002</dd>
+              <dt>Battery</dt><dd>82% · charging</dd>
+              <dt>Transport</dt><dd>USB · id 7</dd>
+              <dt>IMEI</dt><dd class="mono" style="color:var(--text2)">Not readable</dd>
+            </dl>
+            <span class="sect">Quick actions</span>
+            <div class="qa">
+              <span class="btn"><svg><use href="#i-shell"/></svg>Shell</span>
+              <span class="btn"><svg><use href="#i-files"/></svg>Files</span>
+              <span class="btn"><svg><use href="#i-reb"/></svg>Recovery</span>
+              <span class="btn"><svg><use href="#i-bolt"/></svg>Bootloader</span>
+            </div>
+            <span class="sect">Running</span>
+            <div class="job">
+              <div class="row"><span class="name">Install field-tools-2.4.1.apk</span><span class="mono" style="color:var(--text2)">2 / 3</span></div>
+              <div class="prog"><b></b></div>
+              <div class="row" style="color:var(--text2)"><span>Galaxy Tab S9 · pm install…</span><span>Cancel</span></div>
+            </div>
+          </aside>
+        </div>
+        <div class="toast">Installing field-tools-2.4.1.apk on 3 devices <a>View in Activity</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="principles" aria-label="Principles">
+    <div><h3>Targets, not tabs</h3><p>One device list covers ADB and fastboot. The selection is the target for every action, anywhere in the app. The toolbar always says how many devices will be affected.</p></div>
+    <div><h3>A device keeps its row</h3><p>Rows are merged by serial. When a phone reboots into the bootloader, only its chip changes, from <em>Online</em> to <em>Bootloader</em>, and the row stays where it is.</p></div>
+    <div><h3>Everything is a job</h3><p>Actions never block the window. Each job reports progress per device, can be cancelled, and ends with an exact count such as "2 succeeded, 1 failed".</p></div>
+  </section>
+
+  <section class="grid2">
+    <div class="legend">
+      <h2>Device states</h2>
+      <p style="margin-bottom:6px">Each state is shown by a glyph, a label and a colour together. Colour is never the only signal. Every pair meets WCAG AA in both themes.</p>
+      <div class="lrow"><span class="chip online"><svg><use href="#i-ok"/></svg>Online</span><p>Ready for commands.</p></div>
+      <div class="lrow"><span class="chip attn"><svg><use href="#i-lock"/></svg>Unauthorized</span><p>Confirm the USB debugging prompt on the device.</p></div>
+      <div class="lrow"><span class="chip muted"><svg><use href="#i-off"/></svg>Offline</span><p>Reconnect the cable or restart adb.</p></div>
+      <div class="lrow"><span class="chip rec"><svg><use href="#i-rec"/></svg>Recovery</span><p>adb inside recovery. Sideload uses the same colour.</p></div>
+      <div class="lrow"><span class="chip fb"><svg><use href="#i-bolt"/></svg>Bootloader</span><p>Fastboot mode. Fastbootd uses the same colour.</p></div>
+    </div>
+    <div class="legend">
+      <h2>Core tokens</h2>
+      <p style="margin-bottom:6px">These values come from <code>design/tokens.json</code>. On macOS and Windows, the user's system accent overrides Bridge teal.</p>
+      <div class="sw">
+        <div><i style="background:var(--accent)"></i><span><b>Bridge teal</b><code>accent</code></span></div>
+        <div><i style="background:var(--accent-subtle)"></i><span><b>Teal wash</b><code>accentSubtle</code></span></div>
+        <div><i style="background:var(--bg)"></i><span><b>Ground</b><code>bg</code></span></div>
+        <div><i style="background:var(--surface)"></i><span><b>Surface</b><code>surface</code></span></div>
+        <div><i style="background:var(--text)"></i><span><b>Ink</b><code>text</code></span></div>
+        <div><i style="background:var(--text2)"></i><span><b>Ink, quiet</b><code>textSecondary</code></span></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var notes={
+    mac:"macOS: a NavigationSplitView with a translucent sidebar, a unified toolbar, a Table, an inspector pane and an overlay banner.",
+    win11:"Windows 11: a left NavigationView on Mica with a pill selection indicator, a CommandBar, a ListView at 40 px density and an InfoBar.",
+    gnome:"GNOME: an AdwNavigationSplitView with an AdwHeaderBar, a GtkColumnView in a boxed list, 44 px rows, flat buttons and an AdwToast."
+  };
+  var win=document.getElementById('win'), note=document.getElementById('note');
+  var btns=document.querySelectorAll('.switch button');
+  function set(p){
+    win.className='win '+p; note.textContent=notes[p];
+    btns.forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.p===p));});
+    try{localStorage.setItem('adbm-platform',p);}catch(e){}
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){set(b.dataset.p);});});
+  try{var s=localStorage.getItem('adbm-platform'); if(s&&notes[s]) set(s);}catch(e){}
+})();
+</script>

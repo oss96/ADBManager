@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+
+jobs:
+  core-and-linux:
+    name: Core + Linux app
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: GTK 4 and libadwaita 1.5
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libadwaita-1-dev
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --features adbm-core/test-support -- -D warnings
+      - run: cargo test --workspace --features adbm-core/test-support
+      - name: Build Linux app (release)
+        run: cargo build -p adbm-gtk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adb-manager-linux-x86_64
+          path: target/release/adb-manager
+
+  bridges:
+    name: Swift + C# bridges against the real core
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.1"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: scripts/check-bridges.sh
+
+  macos:
+    name: macOS app (SwiftUI)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin, x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+      - name: Build the core as a universal static library
+        run: |
+          cargo build -p adbm-ffi --release --target aarch64-apple-darwin
+          cargo build -p adbm-ffi --release --target x86_64-apple-darwin
+          mkdir -p apps/macos/lib
+          lipo -create -output apps/macos/lib/libadbm_ffi.a \
+            target/aarch64-apple-darwin/release/libadbm_ffi.a \
+            target/x86_64-apple-darwin/release/libadbm_ffi.a
+          cargo rustc -q -p adbm-ffi --release --crate-type staticlib -- --print native-static-libs 2>&1 | grep native-static-libs || true
+      - name: Build the app
+        working-directory: apps/macos
+        run: swift build -c release -Xlinker -L"$PWD/lib"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adb-manager-macos
+          path: apps/macos/.build/release/AdbManager
+
+  windows:
+    name: Windows app (WinUI 3)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build the core
+        run: cargo build -p adbm-ffi --release
+      # WinUI's PRI resource tasks ship with Visual Studio's MSBuild, not the
+      # .NET CLI SDK, so the app is built with msbuild rather than dotnet.
+      - uses: microsoft/setup-msbuild@v2
+      - name: Build the app
+        shell: pwsh
+        run: >
+          msbuild apps/windows/AdbManager/AdbManager.csproj /restore /m /v:minimal
+          /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
+          /p:AdbmFfiDll=$env:GITHUB_WORKSPACE\target\release\adbm_ffi.dll
+          /p:OutDir=$env:GITHUB_WORKSPACE\out\windows\
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adb-manager-windows-x64
+          path: out/windows
