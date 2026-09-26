@@ -86,11 +86,16 @@ jobs:
           dotnet-version: "8.0.x"
       - name: Build the core
         run: cargo build -p adbm-ffi --release
+      # WinUI's PRI resource tasks ship with Visual Studio's MSBuild, not the
+      # .NET CLI SDK, so the app is built with msbuild rather than dotnet.
+      - uses: microsoft/setup-msbuild@v2
       - name: Build the app
         shell: pwsh
         run: >
-          dotnet publish apps/windows/AdbManager/AdbManager.csproj -c Release -r win-x64 -p:Platform=x64
-          -p:AdbmFfiDll="$env:GITHUB_WORKSPACE\target\release\adbm_ffi.dll" -o out/windows
+          msbuild apps/windows/AdbManager/AdbManager.csproj /restore /m /v:minimal
+          /p:Configuration=Release /p:Platform=x64 /p:RuntimeIdentifier=win-x64
+          /p:AdbmFfiDll=$env:GITHUB_WORKSPACE\target\release\adbm_ffi.dll
+          /p:OutDir=$env:GITHUB_WORKSPACE\out\windows\
       - uses: actions/upload-artifact@v4
         with:
           name: adb-manager-windows-x64

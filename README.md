@@ -53,11 +53,18 @@ mkdir -p apps/macos/lib && cp target/release/libadbm_ffi.a apps/macos/lib/
 cd apps/macos && swift build -c release -Xlinker -L"$PWD/lib" && swift run -Xlinker -L"$PWD/lib"
 ```
 
-### Windows (10 1809 or later, .NET 8 SDK)
+### Windows (10 1809 or later)
+
+Needs Visual Studio 2022 with the .NET desktop workload. WinUI's resource
+tasks ship with Visual Studio's MSBuild, so use `msbuild` (from a Developer
+PowerShell) or open the project in Visual Studio. `dotnet build` is not
+enough.
 
 ```powershell
 cargo build -p adbm-ffi --release
-dotnet run --project apps/windows/AdbManager -r win-x64 -p:Platform=x64 -p:AdbmFfiDll="$PWD\target\release\adbm_ffi.dll"
+msbuild apps/windows/AdbManager/AdbManager.csproj /restore /p:Configuration=Release /p:Platform=x64 `
+  /p:RuntimeIdentifier=win-x64 /p:AdbmFfiDll=$PWD\target\release\adbm_ffi.dll /p:OutDir=$PWD\out\windows\
+.\out\windows\AdbManager.exe
 ```
 
 ## Working without devices
